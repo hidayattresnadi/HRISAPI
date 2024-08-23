@@ -1,0 +1,6 @@
+@HRISAPI.API_HostAddress = http://localhost:5115
+
+GET {{HRISAPI.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
