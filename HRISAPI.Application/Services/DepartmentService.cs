@@ -1,5 +1,6 @@
 ﻿using HRISAPI.Application.DTO;
 using HRISAPI.Application.DTO.Department;
+using HRISAPI.Application.DTO.Department.HRISAPI.Application.DTO.Department;
 using HRISAPI.Application.Exceptions;
 using HRISAPI.Application.IServices;
 using HRISAPI.Application.QueryParameter;
@@ -60,14 +61,18 @@ namespace HRISAPI.Application.Services
             };
             return dtoDepartment;
         }
-        public async Task<IEnumerable<DTODepartment>> GetAllDepartments(QueryParameterDepartment? queryParameter)
+        public async Task<IEnumerable<DTODepartmentLocation>> GetAllDepartments(QueryParameterDepartment? queryParameter)
         {
-            var departments = await _departmentRepository.GetAllDepartmentsSorted("Manager", queryParameter);
-            var departmentDtos = departments.Select(department => new DTODepartment
+            var departments = await _departmentRepository.GetAllDepartmentsSorted(queryParameter);
+            var departmentDtos = departments.Select(department => new DTODepartmentLocation
             {
-                Name=department.Name,
+                DepartmentID = department.DepartmentId,
+                DepartmentName=department.Name,
                 Number=department.Number,
-                ManagerName=department.Manager.EmployeeName
+                ManagerName= department.Manager != null ? department.Manager.EmployeeName : "No Manager",
+                LocationNames = department.Locations != null
+                                ? department.Locations.Select(dl => dl.Location.Name).ToList()
+                                : new List<string>()
             }).ToList();
             return departmentDtos;
         }

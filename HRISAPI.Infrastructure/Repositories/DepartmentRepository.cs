@@ -22,23 +22,15 @@ namespace HRISAPI.Infrastructure.Repositories
         }
         public Department Update(Department foundDepartment, DTOResultDepartmentAdd department)
         {
-            var today = DateTime.UtcNow;
             foundDepartment.MgrEmpNo = department.MgrEmpNo;
             foundDepartment.Number = department.Number;
             foundDepartment.Name = department.Name;
             return foundDepartment;
         }
-        public async Task<IEnumerable<Department>> GetAllDepartmentsSorted(string? includeProperties = null, QueryParameterDepartment? queryParameter = null)
+        public async Task<IEnumerable<Department>> GetAllDepartmentsSorted(QueryParameterDepartment? queryParameter = null)
         {
             var query = _db.Departments.AsQueryable();
-            if (!string.IsNullOrEmpty(includeProperties))
-            {
-                string[] includeProps = includeProperties.Split(',', StringSplitOptions.RemoveEmptyEntries);
-                foreach (var include in includeProps)
-                {
-                    query = query.Include(include);
-                }
-            }
+            query = query.Include(d => d.Manager).Include(d => d.Locations).ThenInclude(dl => dl.Location);
             if (!string.IsNullOrEmpty(queryParameter.DepartmentName))
             {
                 query = query.Where(d => d.Name.ToLower().Contains(queryParameter.DepartmentName.ToLower()));

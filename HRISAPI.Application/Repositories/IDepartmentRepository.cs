@@ -13,6 +13,6 @@ namespace HRISAPI.Application.Repositories
     public interface IDepartmentRepository : IRepository<Department>
     {
         Department Update(Department foundDepartment, DTOResultDepartmentAdd department);
-        Task<IEnumerable<Department>> GetAllDepartmentsSorted(string? includeProperties = null, QueryParameterDepartment? queryParameter = null);
+        Task<IEnumerable<Department>> GetAllDepartmentsSorted(QueryParameterDepartment? queryParameter = null);
     }
 }
