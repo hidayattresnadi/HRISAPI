@@ -12,6 +12,7 @@ namespace HRISAPI.Domain.Models
         [Key]
         public int LocationId { get; set; }
         public string Name { get; set; }
-        public virtual ICollection<Department_Location> Departments { get; set; }
+        public virtual ICollection<Department_Location> Departments { get; set; } = new List<Department_Location>();
+        public virtual ICollection<Project> Projects { get; set; } = new List<Project>();
     }
 }

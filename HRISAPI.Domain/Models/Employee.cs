@@ -35,6 +35,7 @@ namespace HRISAPI.Domain.Models
         public virtual ICollection<Employee>? Supervisees { get; set; }
         public virtual ICollection<Dependent>? Dependents { get; set; }
         public virtual ICollection<WorksOn>? WorksOns { get; set; }
+        public virtual AppUser AppUser { get; set; }
 
     }
 }

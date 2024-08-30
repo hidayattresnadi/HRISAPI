@@ -41,6 +41,10 @@ namespace HRISAPI.API.HandlingError
                     code = HttpStatusCode.NotFound;
                     result = JsonSerializer.Serialize(new { error = exception.Message });
                     break;
+                case UnauthorizedAccessException:
+                    code = HttpStatusCode.Unauthorized;
+                    result = JsonSerializer.Serialize(new { error = exception.Message });
+                    break;
                 case InvalidOperationException:
                     code = HttpStatusCode.BadRequest;
                     result = JsonSerializer.Serialize(new { error = exception.Message });

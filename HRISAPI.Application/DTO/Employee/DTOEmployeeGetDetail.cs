@@ -15,6 +15,8 @@ namespace HRISAPI.Application.DTO
         public string JobPosition { get; set; }
         public string SuperVisorName { get; set; }
         public string EmploymentType { get; set; }
+        public int? Salary { get; set; }
+        public string? SSN { get; set; }
 
     }
 }

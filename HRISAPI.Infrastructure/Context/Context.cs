@@ -1,4 +1,5 @@
 ﻿using HRISAPI.Domain.Models;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -8,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace HRISAPI.Infrastructure.Context
 {
-    public class MyDbContext : DbContext
+    public class MyDbContext : IdentityDbContext<AppUser>
     {
         public DbSet<Employee> Employees { get; set; }
         public DbSet<Department> Departments { get; set; }
@@ -23,6 +24,7 @@ namespace HRISAPI.Infrastructure.Context
         }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            base.OnModelCreating(modelBuilder);
             // One-to-One: Department has one Manager (Employee)
             modelBuilder.Entity<Department>()
                 .HasOne(d => d.Manager)
@@ -75,6 +77,12 @@ namespace HRISAPI.Infrastructure.Context
                 .HasOne(dl => dl.Location)
                 .WithMany(l => l.Departments)
                 .HasForeignKey(dl => dl.LocationId);
+
+            modelBuilder.Entity<Project>()
+                .HasOne(p => p.Location) // Setiap Project memiliki satu Location
+                .WithMany(l => l.Projects) // Setiap Location memiliki banyak Projects
+                .HasForeignKey(p => p.LocationId) // ForeignKey di Project adalah LocationId
+                .OnDelete(DeleteBehavior.Cascade);
         }
 
     }

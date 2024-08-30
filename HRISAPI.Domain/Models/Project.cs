@@ -17,5 +17,8 @@ namespace HRISAPI.Domain.Models
         public int DeptId { get; set; }
         public virtual Department Department { get; set; }
         public virtual ICollection<WorksOn>? WorksOnProjects { get; set; }
+        [ForeignKey("Location")]
+        public int? LocationId { get; set; }
+        public virtual Location Location { get; set; }
     }
 }

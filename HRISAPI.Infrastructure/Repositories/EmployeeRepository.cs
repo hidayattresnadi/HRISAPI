@@ -38,6 +38,23 @@ namespace HRISAPI.Infrastructure.Repositories
             foundEmployee.EmploymentType = employee.EmploymentType;
             return foundEmployee;
         }
+        public Employee UpdateForEmployee(Employee foundEmployee, DTOEmployeeAdd employee)
+        {
+            var today = DateTime.UtcNow;
+            foundEmployee.Address = employee.Address;
+            foundEmployee.Sex = employee.Sex;
+            foundEmployee.EmailAddress = employee.EmailAddress;
+            foundEmployee.BirthDate = employee.BirthDate;
+            foundEmployee.LastUpdatedDate = today;
+            foundEmployee.EmployeeName = employee.EmployeeName;
+            foundEmployee.JobPosition = employee.JobPosition;
+            foundEmployee.Level = employee.Level;
+            foundEmployee.DepartmentId = employee.DepartmentId;
+            foundEmployee.PhoneNumber = employee.PhoneNumber;
+            foundEmployee.SuperVisorId = employee.SuperVisorId;
+            foundEmployee.EmploymentType = employee.EmploymentType;
+            return foundEmployee;
+        }
 
         public async Task<IEnumerable< Employee>> GetAllEmployeesSorted(string? includeProperties = null, QueryParameter? queryParameter = null)
         {
@@ -108,6 +125,13 @@ namespace HRISAPI.Infrastructure.Repositories
             foundEmployee.LastUpdatedDate = today;
             foundEmployee.Status = "Not Active";
             foundEmployee.DeactivationReasoning = deleteReasoning;
+            return foundEmployee;
+        }
+        public async Task<Employee> AssignEmployeeToDepartment(Employee foundEmployee, int id)
+        {
+            var today = DateTime.UtcNow;
+            foundEmployee.LastUpdatedDate = today;
+            foundEmployee.DepartmentId = id;
             return foundEmployee;
         }
     }

@@ -1,4 +1,5 @@
 ﻿using HRISAPI.Application.DTO;
+using HRISAPI.Application.DTO.User;
 using HRISAPI.Application.QueryParameter;
 using HRISAPI.Domain.Models;
 using System;
@@ -16,6 +17,7 @@ namespace HRISAPI.Application.IServices
         Task<Employee> GetEmployeeById(int id);
         Task<DTOEmployeeGetDetail> GetEmployeeDetail(int id);
         Task<DTOUpdatedEmployee> UpdateEmployee(DTOEmployeeAdd employee, int id);
+        Task <Response> AssignEmployeeToDepartment(int id);
         Task<bool> DeleteEmployee(int id);
         Task<DTODeactivateEmployee> DeactivateEmployee(int id, string deleteReasoning);
     }

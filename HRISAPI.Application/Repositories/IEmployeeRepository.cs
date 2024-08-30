@@ -1,4 +1,5 @@
 ﻿using HRISAPI.Application.DTO;
+using HRISAPI.Application.DTO.User;
 using HRISAPI.Domain.Models;
 using System;
 using System.Collections.Generic;
@@ -11,6 +12,8 @@ namespace HRISAPI.Application.Repositories
     public interface IEmployeeRepository : IRepository<Employee>
     {
         Employee Update(Employee foundEmployee, DTOEmployeeAdd employee);
+        Employee UpdateForEmployee(Employee foundEmployee, DTOEmployeeAdd employee);
+        Task<Employee> AssignEmployeeToDepartment(Employee employee, int id);
         Task<IEnumerable<Employee>> GetAllEmployeesSorted(string? includeProperties = null,QueryParameter.QueryParameter? queryParameter = null);
         Task<Employee> DeactivateEmployee(Employee employee, string deleteReasoning);
     }

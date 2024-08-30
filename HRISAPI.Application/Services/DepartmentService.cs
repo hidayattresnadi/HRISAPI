@@ -6,6 +6,8 @@ using HRISAPI.Application.IServices;
 using HRISAPI.Application.QueryParameter;
 using HRISAPI.Application.Repositories;
 using HRISAPI.Domain.Models;
+using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
 
 namespace HRISAPI.Application.Services
 {
@@ -14,11 +16,13 @@ namespace HRISAPI.Application.Services
         private readonly IDepartmentRepository _departmentRepository;
         private readonly ILocationRepository _locationRepository;
         private readonly IEmployeeRepository _employeeRepository;
-        public DepartmentService(IDepartmentRepository departmentRepository, ILocationRepository locationRepository, IEmployeeRepository employeeRepository)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        public DepartmentService(IDepartmentRepository departmentRepository, ILocationRepository locationRepository, IEmployeeRepository employeeRepository,IHttpContextAccessor httpContextAccessor)
         {
             _departmentRepository = departmentRepository;
             _locationRepository = locationRepository;
             _employeeRepository = employeeRepository;
+            _httpContextAccessor = httpContextAccessor;
         }
         public async Task<DTOResultDepartmentAdd> AddDepartment(DTODepartmentAdd inputDepartment)
         {
@@ -99,12 +103,31 @@ namespace HRISAPI.Application.Services
                 ManagerName = chosenDepartment.Manager != null ? chosenDepartment.Manager.EmployeeName : "No Manager"
             };
             return departmentDTO;
-
-
         }
         public async Task<DTOResultDepartmentAdd> UpdateDepartment(DTOResultDepartmentAdd department, int id)
         {
+            var employeeId = _httpContextAccessor.HttpContext?.User?.FindFirstValue("EmployeeId");
+            int? intEmployeeId = string.IsNullOrEmpty(employeeId) ? (int?)null : int.Parse(employeeId);
+            var userRoles = _httpContextAccessor.HttpContext?.User?.Claims
+                .Where(c => c.Type == ClaimTypes.Role)
+                .Select(c => c.Value)
+                .ToList();
+
+            bool isAdmin = userRoles.Contains(Roles.Role_Administrator);
+            bool isDepartmentManager = userRoles.Contains(Roles.Role_Department_Manager);
+
             var foundDepartment = await GetDepartmentById(id);
+            if (isAdmin)
+            {
+
+            }
+            else if (isDepartmentManager)
+            {
+                if (intEmployeeId != foundDepartment.MgrEmpNo)
+                {
+                    throw new UnauthorizedAccessException("You are not authorized. Please ensure you have the correct permissions.");
+                }
+            }
             var updatedDepartment = _departmentRepository.Update(foundDepartment, department);
             await _employeeRepository.SaveAsync();
             var updatedDepartmentDTO = new DTOResultDepartmentAdd

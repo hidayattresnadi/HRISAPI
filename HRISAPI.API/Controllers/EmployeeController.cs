@@ -2,6 +2,7 @@
 using HRISAPI.Application.IServices;
 using HRISAPI.Application.QueryParameter;
 using HRISAPI.Domain.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HRISAPI.API.Controllers
@@ -15,42 +16,54 @@ namespace HRISAPI.API.Controllers
         {
             _employeeService = employeeService;
         }
+        [Authorize(Roles = Roles.Role_Administrator + "," + Roles.Role_HR_Manager)]
         [HttpPost]
         public async Task<IActionResult> AddEmployee([FromBody] DTOEmployeeAdd employee)
         {
             var inputEmployee = await _employeeService.AddEmployee(employee);
             return Ok(inputEmployee);
         }
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetAllEmployees([FromQuery] QueryParameter? queryParameter)
         {
             var employees = await _employeeService.GetAllEmployees(queryParameter);
             return Ok(employees);
         }
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetEmployeeById(int id)
         {
             DTOEmployeeGetDetail employee = await _employeeService.GetEmployeeDetail(id);
             return Ok(employee);
         }
+        [Authorize(Roles = Roles.Role_Administrator + "," + Roles.Role_HR_Manager+","+Roles.Role_Employee)]
         [HttpPut("{id}")]
         public async Task<IActionResult> EditEmployee([FromBody] DTOEmployeeAdd employee, int id)
         {
             var updatedEmployee = await _employeeService.UpdateEmployee(employee, id);
             return Ok(updatedEmployee);
         }
+        [Authorize(Roles = Roles.Role_Administrator + "," + Roles.Role_HR_Manager)]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteEmployee(int id)
         {
             await _employeeService.DeleteEmployee(id);
             return Ok("Employee is deleted");
         }
-
+        [Authorize(Roles = Roles.Role_Administrator + "," + Roles.Role_HR_Manager)]
         [HttpPatch("Deactivate_Employee/{id}")]
         public async Task<IActionResult> DeactivateEmployee(int id,[FromBody] string deleteReasoning)
         {
             var deactivateEmployee = await _employeeService.DeactivateEmployee(id,deleteReasoning);
             return Ok(deactivateEmployee);
+        }
+        [Authorize(Roles = Roles.Role_HR_Manager)]
+        [HttpPatch("Assigning_Employee/{id}")]
+        public async Task<IActionResult> AssigningEmployee(int id)
+        {
+            var response = await _employeeService.AssignEmployeeToDepartment(id);
+            return Ok(response);
         }
     }
 }

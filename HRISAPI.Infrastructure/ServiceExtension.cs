@@ -16,6 +16,9 @@ namespace HRISAPI.Infrastructure
             services.AddScoped<IEmployeeRepository, EmployeeRepository>();
             services.AddScoped<IDepartmentRepository, DepartmentRepository>();
             services.AddScoped<ILocationRepository, LocationRepository>();
+            services.AddScoped<IProjectRepository,ProjectRepository>();
+            services.AddScoped<IWorksOnRepository,WorksOnRepository>();
+            services.AddScoped<IDependentRepository, DependentRepository>();
         }
     }
 }
