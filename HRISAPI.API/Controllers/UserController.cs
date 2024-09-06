@@ -17,7 +17,7 @@ namespace HRISAPI.API.Controllers
         {
             _authService = authService;
         }
-        [Authorize(Roles = Roles.Role_Administrator)]
+        //[Authorize(Roles = Roles.Role_Administrator)]
         [HttpPost("register")]
 
         public async Task<IActionResult> RegisterAsync([FromBody] Register model)

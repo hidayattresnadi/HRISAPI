@@ -1,4 +1,5 @@
 ﻿using HRISAPI.Application.Repositories;
+using HRISAPI.Domain.IRepositories;
 using HRISAPI.Infrastructure.Context;
 using HRISAPI.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -19,6 +20,13 @@ namespace HRISAPI.Infrastructure
             services.AddScoped<IProjectRepository,ProjectRepository>();
             services.AddScoped<IWorksOnRepository,WorksOnRepository>();
             services.AddScoped<IDependentRepository, DependentRepository>();
+            services.AddScoped<IWorkflowRepository, WorkflowRepository>();
+            services.AddScoped<IWorkflowSequenceRepository, WorkflowSequenceRepository>();
+            services.AddScoped<IRequestRepository, RequestRepository>();
+            services.AddScoped<IWorkflowActionRepository, WorkflowActionRepository>();
+            services.AddScoped<IProcessRepository, ProcessRepository>();
+            services.AddScoped<INextStepRulesRepository, NextStepRulesRepository>();
+            services.AddScoped<ILeaveRequestRepository, LeaveRequestRepository>();
         }
     }
 }

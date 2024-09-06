@@ -15,7 +15,7 @@ namespace HRISAPI.API.Controllers
         {
             _roleService = roleService;
         }
-        [Authorize(Roles = Roles.Role_Administrator)]
+        //[Authorize(Roles = Roles.Role_Administrator)]
         [HttpPatch("/create_role")]
         public async Task<IActionResult> CreateRoleAsync([FromBody]string roleName)
         {
@@ -35,7 +35,7 @@ namespace HRISAPI.API.Controllers
                 return BadRequest(result.Message);
             return Ok(result);
         }
-        [Authorize(Roles = Roles.Role_Administrator)]
+        //[Authorize(Roles = Roles.Role_Administrator)]
         [HttpPatch("/assign_role/{userId}")]
         public async Task<IActionResult> AssignRoleAsync(string userId,[FromBody] string roleName)
         {
@@ -56,7 +56,7 @@ namespace HRISAPI.API.Controllers
             return Ok(result);
 
         }
-        [Authorize(Roles = Roles.Role_Administrator)]
+        //[Authorize(Roles = Roles.Role_Administrator)]
         [HttpPatch("/remove_role/{userId}")]
         public async Task<IActionResult> RevokeRoleAsync(string userId,[FromBody] string roleName)
         {

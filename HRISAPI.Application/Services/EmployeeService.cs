@@ -1,12 +1,18 @@
 ﻿using HRISAPI.Application.DTO;
+using HRISAPI.Application.DTO.Employee;
 using HRISAPI.Application.DTO.User;
 using HRISAPI.Application.Exceptions;
 using HRISAPI.Application.IServices;
+using HRISAPI.Application.Mail;
 using HRISAPI.Application.Repositories;
+using HRISAPI.Domain.IRepositories;
 using HRISAPI.Domain.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Security.Claims;
 using System.Text;
@@ -20,11 +26,32 @@ namespace HRISAPI.Application.Services
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IDepartmentRepository _departmentRepository;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        public EmployeeService(IEmployeeRepository employeeRepository, IDepartmentRepository departmentRepository, IHttpContextAccessor httpContextAccessor)
+        private readonly IWorkflowActionRepository _workflowActionRepository;
+        private readonly IRequestRepository _requestRepository;
+        private readonly IProcessRepository _processRepository;
+        private readonly IWorkflowSequenceRepository _workflowSequenceRepository;
+        private readonly INextStepRulesRepository _nextStepRulesRepository;
+        private readonly IEmailService _emailService;
+        private readonly ILeaveRequestRepository _leaveRequestRepository;
+        private readonly UserManager<AppUser> _userManager;
+        private readonly RoleManager<IdentityRole> _roleManager;
+        public EmployeeService(IEmployeeRepository employeeRepository, IDepartmentRepository departmentRepository, IHttpContextAccessor httpContextAccessor,
+                               IWorkflowActionRepository workflowActionRepository, IRequestRepository requestRepository, IProcessRepository processRepository,
+                               IWorkflowSequenceRepository workflowSequenceRepository, INextStepRulesRepository nextStepRulesRepository,
+                               IEmailService emailService, UserManager<AppUser> userManager, RoleManager<IdentityRole> roleManager, ILeaveRequestRepository leaveRequestRepository)
         {
             _employeeRepository = employeeRepository;
             _departmentRepository = departmentRepository;
             _httpContextAccessor = httpContextAccessor;
+            _workflowActionRepository = workflowActionRepository;
+            _requestRepository = requestRepository;
+            _processRepository = processRepository;
+            _workflowSequenceRepository = workflowSequenceRepository;
+            _nextStepRulesRepository = nextStepRulesRepository;
+            _emailService = emailService;
+            _roleManager = roleManager;
+            _userManager = userManager;
+            _leaveRequestRepository = leaveRequestRepository;
         }
         public async Task<DTOEmployeeGetAll> AddEmployee(DTOEmployeeAdd inputEmployee)
         {
@@ -286,6 +313,98 @@ namespace HRISAPI.Application.Services
             {
                 Message = "Assigning Employee to department success",
                 Status = "Success"
+            };
+        }
+
+        public async Task<Response> AddRequestAddingLeave(EmployeeDTOLeaveRequest request, int workflowId)
+        {
+            var userId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+            var newRequest = new Request
+            {
+                ProcessName = "Leave Adding Request",
+                Description = "Process for handling leave adding request",
+                StartDate = DateTime.UtcNow
+            };
+            await _requestRepository.AddAsync(newRequest);
+            await _requestRepository.SaveAsync();
+
+            var currentStepId = await _workflowSequenceRepository.GetFirstOrDefaultAsync(wfs => wfs.WorkflowId == workflowId);
+            var nextStepId = await _nextStepRulesRepository.GetFirstOrDefaultAsync(n => n.CurrentStepId == currentStepId.StepId);
+
+            var newProcess = new Process
+            {
+                RequesterId = userId,
+                WorkflowId = workflowId,
+                RequestType = "Adding Leave",
+                Status = "Pending",
+                RequestDate = DateTime.UtcNow,
+                RequestId = newRequest.RequestId,
+                CurrentStepId = nextStepId.NextStepId
+            };
+
+            await _processRepository.AddAsync(newProcess);
+            await _processRepository.SaveAsync();
+
+            var newLeaveRequest = new LeaveRequest
+            {
+                ProcessId = newProcess.ProcessId,
+                EmployeeID = request.EmployeeID,
+                StartDate = request.StartDate,
+                EndDate = request.EndDate,
+                LeaveType = request.LeaveType,
+                Reason = request.Reason
+            };
+
+            await _leaveRequestRepository.AddAsync(newLeaveRequest);
+            await _leaveRequestRepository.SaveAsync();
+
+            var newWorkflowAction = new WorkflowAction
+            {
+                ProcessId = newProcess.ProcessId,
+                StepId = nextStepId.CurrentStepId,
+                ActorId = userId,
+                Action = "Request submitted",
+                ActionDate = DateTime.UtcNow,
+                Comments = $"{request.LeaveType}"
+            };
+            await _workflowActionRepository.AddAsync(newWorkflowAction);
+            await _workflowActionRepository.SaveAsync();
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return new Response
+                {
+                    Status = "Error",
+                    Message = "User is not found"
+                };
+            }
+            var employeeId =user.EmployeeId;
+            var superVisorData = await _employeeRepository.GetFirstOrDefaultAsync(e => e.EmployeeId == employeeId,"Supervisor");
+
+            var htmlTemplate = System.IO.File.ReadAllText(@"./Templates/EmailTemplate/AddingLeaveRequest.html");
+            htmlTemplate = htmlTemplate.Replace("{{EmployeeId}}", request.EmployeeID.ToString());
+            htmlTemplate = htmlTemplate.Replace("{{StartDate}}", request.StartDate.ToString("d MMMM yyyy", new CultureInfo("id-ID")));
+            htmlTemplate = htmlTemplate.Replace("{{EndDate}}", request.EndDate.ToString("d MMMM yyyy", new CultureInfo("id-ID")));
+            htmlTemplate = htmlTemplate.Replace("{{Name}}", superVisorData.Supervisor.EmployeeName);
+            htmlTemplate = htmlTemplate.Replace("{{Leave Type}}", request.LeaveType);
+            htmlTemplate = htmlTemplate.Replace("{{Reason}}", request.Reason);
+
+            var mailData = new MailData
+            {
+                EmailToName = superVisorData.Supervisor.EmployeeName,
+                EmailSubject = "Leave request to add",
+            };
+
+            mailData.EmailToIds.Add(superVisorData.Supervisor.EmailAddress);
+            mailData.EmailToIds.Add(user.Email);
+            mailData.EmailBody = htmlTemplate;
+
+            var emailResult = _emailService.SendEmailAsync(mailData);
+            return new Response
+            {
+                Status = "Success",
+                Message = "Adding leave request success"
             };
         }
     }

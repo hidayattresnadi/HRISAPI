@@ -1,4 +1,5 @@
 ﻿using HRISAPI.Application.DTO;
+using HRISAPI.Application.DTO.Employee;
 using HRISAPI.Application.IServices;
 using HRISAPI.Application.QueryParameter;
 using HRISAPI.Domain.Models;
@@ -16,7 +17,7 @@ namespace HRISAPI.API.Controllers
         {
             _employeeService = employeeService;
         }
-        [Authorize(Roles = Roles.Role_Administrator + "," + Roles.Role_HR_Manager)]
+        //[Authorize(Roles = Roles.Role_Administrator + "," + Roles.Role_HR_Manager)]
         [HttpPost]
         public async Task<IActionResult> AddEmployee([FromBody] DTOEmployeeAdd employee)
         {
@@ -64,6 +65,17 @@ namespace HRISAPI.API.Controllers
         {
             var response = await _employeeService.AssignEmployeeToDepartment(id);
             return Ok(response);
+        }
+        [Authorize(Roles = Roles.Role_Employee)]
+        [HttpPost("leave_request/{id}")]
+        public async Task<IActionResult> AddRequestAddingBook([FromBody]EmployeeDTOLeaveRequest request, int id)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+            var result = await _employeeService.AddRequestAddingLeave(request, id);
+            if (result.Status == "Error")
+                return BadRequest(result.Message);
+            return Ok(result);
         }
     }
 }

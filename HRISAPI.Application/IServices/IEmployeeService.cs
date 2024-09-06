@@ -1,4 +1,5 @@
 ﻿using HRISAPI.Application.DTO;
+using HRISAPI.Application.DTO.Employee;
 using HRISAPI.Application.DTO.User;
 using HRISAPI.Application.QueryParameter;
 using HRISAPI.Domain.Models;
@@ -20,5 +21,6 @@ namespace HRISAPI.Application.IServices
         Task <Response> AssignEmployeeToDepartment(int id);
         Task<bool> DeleteEmployee(int id);
         Task<DTODeactivateEmployee> DeactivateEmployee(int id, string deleteReasoning);
+        Task<Response> AddRequestAddingLeave(EmployeeDTOLeaveRequest request, int workflowId);
     }
 }

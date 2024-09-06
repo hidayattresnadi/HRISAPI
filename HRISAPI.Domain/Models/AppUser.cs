@@ -10,5 +10,7 @@ namespace HRISAPI.Domain.Models
         [ForeignKey("Employee")]
         public int? EmployeeId { get; set; }
         public virtual Employee Employee { get; set; }
+        public virtual ICollection<WorkflowAction> WorkflowActions { get; set; } = new List<WorkflowAction>();
+        public virtual ICollection<Process> Processes { get; set; } = new List<Process>();
     }
 }

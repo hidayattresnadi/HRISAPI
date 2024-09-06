@@ -143,13 +143,16 @@ namespace HRISAPI.Application.Services
                 var authClaims = new List<Claim>
                 {
                     new Claim(ClaimTypes.Email, user.Email),
+                    new Claim(ClaimTypes.NameIdentifier, user.Id),
                     new Claim("EmployeeId", user.EmployeeId.ToString()),
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 };
 
                 foreach (var userRole in userRoles)
                 {
+                    var role = await _roleManager.FindByNameAsync(userRole);
                     authClaims.Add(new Claim(ClaimTypes.Role, userRole));
+                    authClaims.Add(new Claim("RoleId", role.Id));
                 }
 
                 // Generate new access token
@@ -203,11 +206,14 @@ namespace HRISAPI.Application.Services
             {
                 new Claim(ClaimTypes.Name, user.UserName), // Nama pengguna
                 new Claim("EmployeeId", user.EmployeeId.ToString()),
+                new Claim(ClaimTypes.NameIdentifier, user.Id),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()), // ID unik untuk token
             };
             foreach (var userRole in userRoles)
             {
+                var role = await _roleManager.FindByNameAsync(userRole);
                 authClaims.Add(new Claim(ClaimTypes.Role, userRole));
+                authClaims.Add(new Claim("RoleId", role.Id));
             }
 
             // Generate new access token

@@ -6,6 +6,7 @@ using HRISAPI.Application.Services;
 using HRISAPI.Domain.Models;
 using HRISAPI.Infrastructure;
 using HRISAPI.Infrastructure.Context;
+using LibrarySystem.Application.IServices;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
@@ -26,6 +27,12 @@ builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<IWorksOnService, WorksOnService>();
 builder.Services.AddScoped<IDependentService,DependentService>();
+builder.Services.AddScoped<IWorkflowService, WorkflowService>();
+builder.Services.AddScoped<IWorkflowSequenceService, WorkflowSequenceService>();
+builder.Services.AddScoped<IProcessService, ProcessService>();
+builder.Services.AddScoped<INextStepRulesService, NextStepRulesService>();
+builder.Services.AddTransient<IEmailService, EmailService>();
+builder.Services.Configure<MailSettings>(builder.Configuration.GetSection("MailSettings"));
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
