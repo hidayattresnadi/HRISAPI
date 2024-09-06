@@ -18,7 +18,7 @@ namespace HRISAPI.API.Controllers
         {
             _departmentService = departmentService;
         }
-        //[Authorize(Roles = Roles.Role_Administrator)]
+        [Authorize(Roles = Roles.Role_Administrator)]
         [HttpPost]
         public async Task<IActionResult> AddDepartment([FromBody] DTODepartmentAdd department)
         {

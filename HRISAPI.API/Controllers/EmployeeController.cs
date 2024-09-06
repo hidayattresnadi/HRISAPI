@@ -17,7 +17,7 @@ namespace HRISAPI.API.Controllers
         {
             _employeeService = employeeService;
         }
-        //[Authorize(Roles = Roles.Role_Administrator + "," + Roles.Role_HR_Manager)]
+        [Authorize(Roles = Roles.Role_Administrator + "," + Roles.Role_HR_Manager)]
         [HttpPost]
         public async Task<IActionResult> AddEmployee([FromBody] DTOEmployeeAdd employee)
         {
