@@ -5,12 +5,17 @@ using HRISAPI.Application.Repositories;
 using HRISAPI.Domain.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
+using PdfSharpCore.Pdf;
+using PdfSharpCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+using TheArtOfDev.HtmlRenderer.Core;
+using TheArtOfDev.HtmlRenderer.PdfSharp;
+using HRISAPI.Application.DTO.User;
 
 namespace HRISAPI.Application.Services
 {
@@ -29,7 +34,7 @@ namespace HRISAPI.Application.Services
             _httpContextAccessor = httpContextAccessor;
             _departmentRepository = departmentRepository;
         }
-        public async Task<WorksOn> AddWorksOn(DTOWorksOn inputWorksOn)
+        public async Task<Response> AddWorksOn(DTOWorksOn inputWorksOn)
         {
             if (!await _projectRepository.AnyAsync(pro => pro.ProjectId == inputWorksOn.ProjNo))
             {
@@ -79,7 +84,11 @@ namespace HRISAPI.Application.Services
             };
             await _worksOnRepository.AddAsync(newWorksOn);
             await _worksOnRepository.SaveAsync();
-            return newWorksOn;
+            return new Response
+            {
+                Status = "Success",
+                Message ="WorksOn Created successfully"
+            };
         }
         public async Task<IEnumerable<DTOWorksOnDetail>> GetAllWorksOns()
         {
@@ -211,6 +220,55 @@ namespace HRISAPI.Application.Services
             _worksOnRepository.Remove(foundWorksOn);
             await _worksOnRepository.SaveAsync();
             return true;
+        }
+        public async Task<byte[]> GenerateProjectReportPDF()
+        {
+            var projects = await _worksOnRepository.GetProjectReport();
+
+            string htmlContent = $"<h1>Report of Projects</h1>";
+            htmlContent += "<table>";
+            htmlContent += "<tr>" +
+                "<th>Project Name</th>"+
+                "<th>Total Employees</th>" +
+                "<th>Total Hours</th>" +
+                "<th>Average Hours</th>" +
+                "</tr>";
+
+            foreach (var project in projects)
+            {
+                htmlContent += $"<tr>" +
+                               $"<td>{project.ProjectName}</td>" +
+                               $"<td>{project.TotalEmployees}</td>" +
+                               $"<td>{project.TotalHours}</td>" +
+                               $"<td>{project.AverageHours}</td>" +
+                               $"</tr>";
+            }
+
+            htmlContent += "</table>";
+
+            var document = new PdfDocument();
+            var config = new PdfGenerateConfig
+            {
+                PageOrientation = PageOrientation.Landscape,
+                PageSize = PageSize.A4
+            };
+
+            string cssStr = File.ReadAllText(@"./Templates/PDFReportTemplate/style.css");
+            CssData css = PdfGenerator.ParseStyleSheet(cssStr);
+            PdfGenerator.AddPdfPages(document, htmlContent, config, css);
+
+            MemoryStream stream = new MemoryStream();
+
+            document.Save(stream, false);
+
+            byte[] bytes = stream.ToArray();
+
+            return bytes;
+        }
+        public async Task<IEnumerable<WorksOnProjectReport>> GetGroupedProjects()
+        {
+            var projects = await _worksOnRepository.GetProjectReport();
+            return projects;
         }
     }
 }

@@ -53,10 +53,6 @@ namespace HRISAPI.Infrastructure.Context
                 .HasForeignKey(p => p.DeptId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Many-to-Many: Employee <-> Project via WorksOn
-            modelBuilder.Entity<WorksOn>()
-                .HasKey(wo => new { wo.EmpNo, wo.ProjNo }); // Composite key for EmployeeId and ProjectId
-
             modelBuilder.Entity<WorksOn>()
                 .HasOne(wo => wo.Employee)
                 .WithMany(e => e.WorksOns)
@@ -90,7 +86,25 @@ namespace HRISAPI.Infrastructure.Context
                 .WithMany(l => l.Projects) // Setiap Location memiliki banyak Projects
                 .HasForeignKey(p => p.LocationId) // ForeignKey di Project adalah LocationId
                 .OnDelete(DeleteBehavior.Cascade);
-        
+
+            modelBuilder.Entity<LeaveRequest>()
+                .HasOne(l => l.Process)
+                .WithMany(p => p.LeaveRequests )
+                .HasForeignKey(l => l.ProcessId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<WorkflowSequence>()
+                .HasOne(ws => ws.Role) // Navigasi ke AspNetRoles
+                .WithOne() // Tidak ada navigasi balik
+                .HasForeignKey<WorkflowSequence>(ws => ws.RequiredRole) // Foreign key di WorkflowSequence
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<LeaveRequest>()
+                .HasOne(l => l.Employee)
+                .WithOne()
+                .HasForeignKey<LeaveRequest>(l => l.EmployeeID) 
+                .OnDelete(DeleteBehavior.Cascade);
+
             modelBuilder.Entity<Request>(entity =>
             {
                 entity.HasKey(e => e.RequestId).HasName("request_pkey");

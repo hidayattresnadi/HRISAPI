@@ -1,4 +1,5 @@
 ﻿using HRISAPI.Application.DTO.Project;
+using HRISAPI.Application.DTO.WorksOn;
 using HRISAPI.Domain.Models;
 using System;
 using System.Collections.Generic;
@@ -12,6 +13,6 @@ namespace HRISAPI.Application.Repositories
     {
         Task<List<Project>> GetAllProjectsAsync(List<string>userRoles,int? intEmployeeId);
         Task<Project> GetProjectByIdAsync(int id);
-        public Project Update(Project foundProject, DTOProject project);
+        Project Update(Project foundProject, DTOProject project);
     }
 }

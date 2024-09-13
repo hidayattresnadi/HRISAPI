@@ -31,6 +31,8 @@ builder.Services.AddScoped<IWorkflowService, WorkflowService>();
 builder.Services.AddScoped<IWorkflowSequenceService, WorkflowSequenceService>();
 builder.Services.AddScoped<IProcessService, ProcessService>();
 builder.Services.AddScoped<INextStepRulesService, NextStepRulesService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<ILeaveRequestService, LeaveRequestService>();
 builder.Services.AddTransient<IEmailService, EmailService>();
 builder.Services.Configure<MailSettings>(builder.Configuration.GetSection("MailSettings"));
 builder.Services.AddHttpContextAccessor();

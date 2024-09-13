@@ -29,6 +29,7 @@ namespace HRISAPI.Domain.Models
         public virtual Request Request { get; set; }
         public DateTime RequestDate { get; set; }
         public virtual ICollection<WorkflowAction> WorkflowActions { get; set; }
+        public virtual ICollection<LeaveRequest> LeaveRequests { get; set; }
     }
 
 }

@@ -22,5 +22,7 @@ namespace HRISAPI.Application.IServices
         Task<bool> DeleteEmployee(int id);
         Task<DTODeactivateEmployee> DeactivateEmployee(int id, string deleteReasoning);
         Task<Response> AddRequestAddingLeave(EmployeeDTOLeaveRequest request, int workflowId);
+        Task<byte[]> GenerateEmployeeReportByDepartmentPDF(int departmentId);
+        Task<IEnumerable<EmployeeDetailPDF>> GetEmployeeDataPraPDF(int departmentId);
     }
 }

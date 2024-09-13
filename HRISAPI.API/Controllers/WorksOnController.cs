@@ -1,6 +1,8 @@
 ﻿using HRISAPI.Application.DTO;
+using HRISAPI.Application.DTO.Employee;
 using HRISAPI.Application.DTO.WorksOn;
 using HRISAPI.Application.IServices;
+using HRISAPI.Application.Services;
 using HRISAPI.Domain.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -77,6 +79,21 @@ namespace HRISAPI.API.Controllers
                 return NotFound();
             }
             return Ok("WorksOn is deleted");
+        }
+        [HttpGet("generate_report")]
+        public async Task<IActionResult> ProjectReport()
+        {
+            var Filename = "ProjectReport.pdf";
+
+            var file = await _worksOnService.GenerateProjectReportPDF();
+
+            return File(file, "application/pdf", Filename);
+        }
+        [HttpGet("project_grouped")]
+        public async Task<IActionResult> GetGroupedProjects()
+        {
+            var projects = await _worksOnService.GetGroupedProjects();
+            return Ok(projects);
         }
     }
 }

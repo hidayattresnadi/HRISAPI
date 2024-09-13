@@ -77,5 +77,21 @@ namespace HRISAPI.API.Controllers
                 return BadRequest(result.Message);
             return Ok(result);
         }
+
+        [HttpGet("generate_report/{departmentId}")]
+        public async Task<IActionResult> EmployeeReport(int departmentId)
+        {
+            var Filename = "EmployeeReport.pdf";
+
+            var file = await _employeeService.GenerateEmployeeReportByDepartmentPDF(departmentId);
+
+            return File(file, "application/pdf", Filename);
+        }
+        [HttpGet("pra_PDF/{departmentId}")]
+        public async Task<IActionResult> EmployeeReportJSON(int departmentId)
+        {
+            var employees = await _employeeService.GetEmployeeDataPraPDF(departmentId);
+            return Ok(employees);
+        }
     }
 }

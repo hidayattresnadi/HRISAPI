@@ -3,6 +3,7 @@ using System;
 using HRISAPI.Infrastructure.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HRISAPI.Infrastructure.Migrations
 {
     [DbContext(typeof(MyDbContext))]
-    partial class MyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240912084752_add_relation_to_Table_LeaveRequest")]
+    partial class add_relation_to_Table_LeaveRequest
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -580,24 +583,19 @@ namespace HRISAPI.Infrastructure.Migrations
 
             modelBuilder.Entity("HRISAPI.Domain.Models.WorksOn", b =>
                 {
-                    b.Property<int>("WorksOnId")
-                        .ValueGeneratedOnAdd()
+                    b.Property<int>("EmpNo")
                         .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("WorksOnId"));
-
-                    b.Property<int>("EmpNo")
+                    b.Property<int>("ProjNo")
                         .HasColumnType("integer");
 
                     b.Property<decimal>("Hoursworked")
                         .HasColumnType("numeric");
 
-                    b.Property<int>("ProjNo")
+                    b.Property<int>("WorksOnId")
                         .HasColumnType("integer");
 
-                    b.HasKey("WorksOnId");
-
-                    b.HasIndex("EmpNo");
+                    b.HasKey("EmpNo", "ProjNo");
 
                     b.HasIndex("ProjNo");
 

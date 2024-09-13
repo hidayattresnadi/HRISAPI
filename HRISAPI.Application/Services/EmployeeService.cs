@@ -9,6 +9,8 @@ using HRISAPI.Domain.IRepositories;
 using HRISAPI.Domain.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using PdfSharpCore.Pdf;
+using PdfSharpCore;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -17,6 +19,8 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+using TheArtOfDev.HtmlRenderer.Core;
+using TheArtOfDev.HtmlRenderer.PdfSharp;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace HRISAPI.Application.Services
@@ -406,6 +410,93 @@ namespace HRISAPI.Application.Services
                 Status = "Success",
                 Message = "Adding leave request success"
             };
+        }
+        public async Task<byte[]> GenerateEmployeeReportByDepartmentPDF(int departmentId)
+        {
+            var employees = await _employeeRepository.GetAllAsync(e => e.DepartmentId == departmentId);
+            var chosenDepartment = await _departmentRepository.GetFirstOrDefaultAsync(d => d.DepartmentId == departmentId);
+            string departmentName = $"{chosenDepartment.Name}";
+
+            var document = new PdfDocument();
+            var config = new PdfGenerateConfig
+            {
+                PageOrientation = PageOrientation.Landscape,
+                PageSize = PageSize.A4
+            };
+
+            int maxItemsPerPage = 20;
+            int pageCount = (int)Math.Ceiling(employees.Count() / (double)maxItemsPerPage);
+
+            string cssStr = File.ReadAllText(@"./Templates/PDFReportTemplate/style2.css");
+            CssData css = PdfGenerator.ParseStyleSheet(cssStr);
+            for (int page = 0; page < pageCount; page++)
+            {
+                // Mengambil data untuk halaman saat ini
+                var employeesPage = employees.Skip(page * maxItemsPerPage).Take(maxItemsPerPage).ToList();
+
+                // Membuat konten HTML untuk halaman
+                string htmlContent = $"<h1>Report of Employees Information for Department: {departmentName}</h1>";
+                htmlContent += $"<h3>Page {page + 1} of {pageCount}</h3>"; // Menampilkan nomor halaman
+                htmlContent += "<table>";
+                htmlContent += "<tr>" +
+                    "<th>Employee Name</th>" +
+                    "<th>Address</th>" +
+                    "<th>Salary</th>" +
+                    "<th>Sex</th>" +
+                    "<th>Birth Date</th>" +
+                    "<th>Employment Type</th>" +
+                    "<th>Phone Number</th>" +
+                    "<th>Email Address</th>" +
+                    "<th> Job Position</th>" +
+                    "</tr>";
+
+                foreach (var employee in employeesPage)
+                {
+                    htmlContent += $"<tr>" +
+                                   $"<td>{employee.EmployeeName}</td>" +
+                                   $"<td>{employee.Address}</td>" +
+                                   $"<td>{employee.Sallary}</td>" +
+                                   $"<td>{employee.Sex}</td>" +
+                                   $"<td>{employee.BirthDate:yyyy-MM-dd}</td>" +
+                                   $"<td>{employee.EmploymentType}</td>" +
+                                   $"<td>{employee.PhoneNumber}</td>" +
+                                   $"<td>{employee.EmailAddress}</td>" +
+                                   $"<td>{employee.JobPosition}</td>" +
+                                   $"</tr>";
+                }
+
+                htmlContent += "</table>";
+
+                // Menambahkan halaman ke dokumen PDF
+                PdfGenerator.AddPdfPages(document, htmlContent, config, css);
+            }
+
+            MemoryStream stream = new MemoryStream();
+
+            document.Save(stream, false);
+
+            byte[] bytes = stream.ToArray();
+
+            return bytes;
+        }
+
+        public async Task<IEnumerable<EmployeeDetailPDF>> GetEmployeeDataPraPDF(int departmentId)
+        {
+            var employees = await _employeeRepository.GetAllAsync(e => e.DepartmentId == departmentId);
+            var employeesDTO = employees.Select(e => new EmployeeDetailPDF
+            {
+                EmployeeName = e.EmployeeName,
+                Address = e.Address,
+                Sallary = e.Sallary,
+                Sex = e.Sex,
+                BirthDate = e.BirthDate,
+                EmploymentType = e.EmploymentType,
+                PhoneNumber = e.PhoneNumber,
+                EmailAddress = e.EmailAddress,
+                JobPosition = e.JobPosition
+            }).ToList();
+
+            return employeesDTO;
         }
     }
 }

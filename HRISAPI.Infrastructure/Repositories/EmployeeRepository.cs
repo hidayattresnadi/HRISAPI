@@ -1,9 +1,12 @@
 ﻿using HRISAPI.Application.DTO;
+using HRISAPI.Application.DTO.Dashboard;
+using HRISAPI.Application.DTO.Employee;
 using HRISAPI.Application.QueryParameter;
 using HRISAPI.Application.Repositories;
 using HRISAPI.Domain.Models;
 using HRISAPI.Infrastructure.Context;
 using Microsoft.EntityFrameworkCore;
+using PdfSharpCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -133,6 +136,27 @@ namespace HRISAPI.Infrastructure.Repositories
             foundEmployee.LastUpdatedDate = today;
             foundEmployee.DepartmentId = id;
             return foundEmployee;
+        }
+
+        public async Task<IEnumerable<EmployeeDistributionDTO>> GetEmployeesDistribution()
+        {
+            var totalDistributionEmployees = await _db.Employees.Include("Department").GroupBy(e => new { e.Department.Name }).Select(g => new EmployeeDistributionDTO
+            {
+                DepartmentName = g.Key.Name,
+                DepartmentCount = g.Count()
+            })
+            .ToListAsync();
+            return totalDistributionEmployees;
+        }
+        public async Task<IEnumerable<DepartmentSallaryDTO>> GetDepartmentSallaries()
+        {
+            var totalSallariesDepartments = await _db.Employees.Include("Department").GroupBy(e => new { e.Department.Name }).Select(g => new DepartmentSallaryDTO
+            {
+                DepartmentName = g.Key.Name,
+                DepartmentSallary = g.Average(e => e.Sallary)
+            })
+           .ToListAsync();
+            return totalSallariesDepartments;
         }
     }
 }

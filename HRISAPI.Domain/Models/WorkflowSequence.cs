@@ -1,4 +1,5 @@
 ﻿using HRISAPI.Domain.Models;
+using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -18,22 +19,8 @@ namespace HRISAPI.Domain.Models
         public virtual Workflow Workflow { get; set; }
         public int StepOrder {  get; set; }
         public string StepName { get; set; }
+        [ForeignKey("Role")]
         public string? RequiredRole { get; set; }
+        public virtual IdentityRole Role { get; set; }
     }
 }
-
-
-//public class WorkflowSequence
-//{
-//    [Key]
-//    public int StepId { get; set; }
-//    [ForeignKey("Workflow")]
-//    public int WorkflowId { get; set; }
-//    // Relasi ke Workflow
-//    public virtual Workflow Workflow { get; set; }
-//    public int StepOrder { get; set; }
-//    public string StepName { get; set; }
-//    public string RequiredRole { get; set; }
-//    // Relasi ke WorkflowActions
-//    public ICollection<WorkflowAction> WorkflowActions { get; set; }
-//}
