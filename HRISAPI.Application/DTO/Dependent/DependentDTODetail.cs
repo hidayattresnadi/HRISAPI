@@ -14,5 +14,6 @@ namespace HRISAPI.Application.DTO.Dependent
         public DateOnly BirthDate { get; set; }
         public string Relations { get; set; }
         public string EmployeeName { get; set; }
+        public int? EmployeeId { get; set; }
     }
 }

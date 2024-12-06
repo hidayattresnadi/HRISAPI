@@ -15,6 +15,12 @@ namespace HRISAPI.API.Controllers
         {
             _roleService = roleService;
         }
+        [HttpGet]
+        public async Task<IActionResult> GetAllRoles()
+        {
+            var roles = await _roleService.GetAllRolesAsync();
+            return Ok(roles);
+        }
         [Authorize(Roles = Roles.Role_Administrator)]
         [HttpPatch("/create_role")]
         public async Task<IActionResult> CreateRoleAsync([FromBody]string roleName)

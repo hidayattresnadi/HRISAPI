@@ -14,5 +14,6 @@ namespace HRISAPI.Application.DTO.WorksOn
         public string DeptName { get; set; }
         public string SuperVisorName { get; set; }
         public decimal Hoursworked { get; set; }
+        public int WorksNo {  get; set; }
     }
 }

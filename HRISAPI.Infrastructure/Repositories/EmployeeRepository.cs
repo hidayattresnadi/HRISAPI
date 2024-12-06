@@ -59,7 +59,7 @@ namespace HRISAPI.Infrastructure.Repositories
             return foundEmployee;
         }
 
-        public async Task<IEnumerable< Employee>> GetAllEmployeesSorted(string? includeProperties = null, QueryParameter? queryParameter = null)
+        public async Task<(IEnumerable< Employee>, int totalCount)> GetAllEmployeesSorted(string? includeProperties = null, QueryParameter? queryParameter = null)
         {
             var query = _db.Employees.AsQueryable();
             if (!string.IsNullOrEmpty(includeProperties))
@@ -119,8 +119,14 @@ namespace HRISAPI.Infrastructure.Repositories
                     };
                 }
             }
+            var totalCount = await query.CountAsync();
+
+            if(queryParameter.PageSize == 0)
+            {
+                queryParameter.PageSize = totalCount;
+            }
             query = query.Skip((queryParameter.PageNumber - 1) * queryParameter.PageSize).Take(queryParameter.PageSize);
-            return await query.ToListAsync();
+            return (await query.ToListAsync(), totalCount);
         }
         public async Task<Employee> DeactivateEmployee(Employee foundEmployee, string deleteReasoning)
         {
@@ -158,5 +164,21 @@ namespace HRISAPI.Infrastructure.Repositories
            .ToListAsync();
             return totalSallariesDepartments;
         }
+
+        public async Task<EmployeeDto> GetEmployeeNameByIdAsync(int employeeId)
+        {
+            // Menggunakan AsNoTracking() untuk menghindari pelacakan entitas
+            var employeeDTO = await _db.Employees
+                .Where(e => e.EmployeeId == employeeId)
+                .Select(e => new EmployeeDto
+                {
+                    EmployeeName = e.EmployeeName
+                })
+                .FirstOrDefaultAsync();
+
+            return employeeDTO;
+        }
+
+
     }
 }

@@ -65,9 +65,9 @@ namespace HRISAPI.Application.Services
             };
             return dtoDepartment;
         }
-        public async Task<IEnumerable<DTODepartmentLocation>> GetAllDepartments(QueryParameterDepartment? queryParameter)
+        public async Task<object> GetAllDepartments(QueryParameterDepartment? queryParameter)
         {
-            var departments = await _departmentRepository.GetAllDepartmentsSorted(queryParameter);
+            var (departments, totalCount) = await _departmentRepository.GetAllDepartmentsSorted(queryParameter);
             var departmentDtos = departments.Select(department => new DTODepartmentLocation
             {
                 DepartmentID = department.DepartmentId,
@@ -78,7 +78,16 @@ namespace HRISAPI.Application.Services
                                 ? department.Locations.Select(dl => dl.Location.Name).ToList()
                                 : new List<string>()
             }).ToList();
-            return departmentDtos;
+            var totalPages = (int)Math.Ceiling((double)totalCount / queryParameter.PageSize);
+
+            var result = new
+            {
+                Data = departmentDtos,
+                TotalPages = totalPages,
+                totalCount = totalCount,
+            };
+
+            return result;
         }
         public async Task<Department> GetDepartmentById(int id)
         {

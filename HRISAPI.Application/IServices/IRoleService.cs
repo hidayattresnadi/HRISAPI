@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using HRISAPI.Application.DTO.User;
+using Microsoft.AspNetCore.Identity;
 
 namespace HRISAPI.Application.IServices
 {
@@ -14,5 +15,6 @@ namespace HRISAPI.Application.IServices
         Task<Response> AssignRoleAsync(string userId, string roleName);
         Task<Response> ModifyUserRolesAsync(string userId, List<string> rolesToAdd, List<string> rolesToRemove);
         Task<Response> RevokeRoleAsync(string userId, string roleName);
+        Task<List<IdentityRole>> GetAllRolesAsync();
     }
 }

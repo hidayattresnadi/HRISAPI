@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HRISAPI.Domain.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,5 +13,8 @@ namespace HRISAPI.Application.DTO.User
         public string RefreshToken { get; set; }
         public DateTime ExpiredOn { get; set; }
         public DateTime RefreshTokenExpireOn { get; set; }
+        public List<string>? Roles { get; set; }
+        public AppUser? User { get; set; }
+        public string? EmployeeName { get; set; }
     }
 }

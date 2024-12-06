@@ -14,6 +14,10 @@ namespace HRISAPI.Application.Services
             _roleManager = roleManager;
             _userManager = userManager;
         }
+        public async Task<List<IdentityRole>> GetAllRolesAsync()
+        {
+            return await Task.FromResult(_roleManager.Roles.ToList());
+        }
         public async Task<Response> CreateRoleAsync(string roleName)
         {
             if (!await _roleManager.RoleExistsAsync(roleName))
@@ -82,7 +86,7 @@ namespace HRISAPI.Application.Services
             if (user == null){
                 return new Response { Status = "Error", Message = "User not found." };
             }
-            if (rolesToRemove != null && rolesToRemove.Count > 0){
+            if (rolesToRemove != null && rolesToRemove.Count() > 0){
                 var resultRemove = await _userManager.RemoveFromRolesAsync(user, rolesToRemove);
                 if (!resultRemove.Succeeded){
                     return new Response { Status = "Error", Message = "Failed to remove roles." };

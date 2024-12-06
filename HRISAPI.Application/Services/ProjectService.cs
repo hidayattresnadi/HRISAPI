@@ -48,8 +48,8 @@ namespace HRISAPI.Application.Services
             }
             else if (isDepartmentManager)
             {
-                var department = _departmentRepository.GetFirstOrDefaultAsync(d => d.MgrEmpNo == intEmployeeId);
-                if (inputProject.DeptId != department?.Id) 
+                var department = await _departmentRepository.GetFirstOrDefaultAsync(d => d.MgrEmpNo == intEmployeeId);
+                if (inputProject.DeptId != department?.DepartmentId) 
                 {
                     throw new UnauthorizedAccessException("You are not authorized. Please ensure you have the correct permissions.");
                 }
@@ -136,8 +136,8 @@ namespace HRISAPI.Application.Services
             }
             else if (isDepartmentManager)
             {
-                var department = _departmentRepository.GetFirstOrDefaultAsync(d => d.MgrEmpNo == intEmployeeId);
-                if (chosenProject.DeptId != department?.Id)
+                var department = await _departmentRepository.GetFirstOrDefaultAsync(d => d.MgrEmpNo == intEmployeeId);
+                if (chosenProject.DeptId != department?.DepartmentId)
                 {
                     throw new UnauthorizedAccessException("You are not authorized. Please ensure you have the correct permissions.");
                 }
@@ -152,7 +152,8 @@ namespace HRISAPI.Application.Services
                 ProjectId = chosenProject.ProjectId,
                 Name = chosenProject.Name,
                 LocationName = chosenProject.Location != null ? chosenProject.Location.Name : "No Location",
-                DepartmentName = chosenProject.Department != null ? chosenProject.Department.Name : "No Department"
+                DepartmentName = chosenProject.Department != null ? chosenProject.Department.Name : "No Department",
+                DeptId = chosenProject.DeptId,
             };
             return projectDTO;
         }

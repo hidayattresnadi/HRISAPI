@@ -43,7 +43,7 @@ namespace HRISAPI.API.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetWorksOnById(int id)
         {
-            WorksOn worksOn = await _worksOnService.GetWorksOnById(id);
+            var worksOn = await _worksOnService.GetWorksOnById(id);
             if (worksOn == null)
             {
                 return NotFound();

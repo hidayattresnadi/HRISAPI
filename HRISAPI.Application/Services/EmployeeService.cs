@@ -22,6 +22,10 @@ using System.Threading.Tasks;
 using TheArtOfDev.HtmlRenderer.Core;
 using TheArtOfDev.HtmlRenderer.PdfSharp;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace HRISAPI.Application.Services
 {
@@ -102,13 +106,41 @@ namespace HRISAPI.Application.Services
                 JobPosition = newEmployee.JobPosition,
                 Level = newEmployee.Level,
                 LastUpdatedDate = newEmployee.LastUpdatedDate,
-                Department = newEmployee.Department.Name,
+                Department = newEmployee.Department?.Name ?? "No Department Assigned",
             };
             return employeeDto;
         }
-        public async Task<IEnumerable<DTOEmployeeGetAll>> GetAllEmployees(QueryParameter.QueryParameter? queryParameter)
+        public async Task<object> GetAllEmployees(QueryParameter.QueryParameter? queryParameter)
         {
-            var employees = await _employeeRepository.GetAllEmployeesSorted("Department",queryParameter);
+            var employeeId = _httpContextAccessor.HttpContext?.User?.FindFirstValue("EmployeeId");
+            int? intEmployeeId = string.IsNullOrEmpty(employeeId) ? (int?)null : int.Parse(employeeId);
+            var userRoles = _httpContextAccessor.HttpContext?.User?.Claims
+                .Where(c => c.Type == ClaimTypes.Role)
+                .Select(c => c.Value)
+                .ToList();
+
+            bool isAdmin = userRoles.Contains(Roles.Role_Administrator);
+            bool isHRManager = userRoles.Contains(Roles.Role_HR_Manager);
+            bool isEmployee = userRoles.Contains(Roles.Role_Employee);
+            bool isDepartmentManager = userRoles.Contains(Roles.Role_Department_Manager);
+            bool isEmployeeSupervisor = userRoles.Contains(Roles.Role_Employee_Supervisor);
+
+            var (employees, totalCount) = await _employeeRepository.GetAllEmployeesSorted("Department",queryParameter);
+
+            if (isAdmin || isHRManager)
+            {
+
+            }
+            else if (isDepartmentManager)
+            {
+                var foundManager = employees.FirstOrDefault(e=>e.EmployeeId == intEmployeeId);
+                employees = employees.Where(e => e.DepartmentId == foundManager.DepartmentId);
+            }
+            else if (isEmployeeSupervisor)
+            {
+                employees = employees.Where(e => e.SuperVisorId == intEmployeeId);
+            }
+
             var employeeDtos = employees.Select(employee => new DTOEmployeeGetAll
             {
                 EmployeeName = employee.EmployeeName,
@@ -116,9 +148,20 @@ namespace HRISAPI.Application.Services
                 JobPosition = employee.JobPosition,
                 Level = employee.Level,
                 LastUpdatedDate = employee.LastUpdatedDate,
-                Department = employee.Department.Name,
+                Department = employee.Department?.Name ?? "No Department Assigned" ,
+                EmpNo = employee.EmployeeId,
+
             }).ToList();
-            return employeeDtos;
+
+            var totalPages = (int)Math.Ceiling((double)totalCount / queryParameter.PageSize);
+
+            var result = new
+            {
+                Data = employeeDtos,
+                TotalPages = totalPages,
+                totalCount = totalCount,
+            };
+            return result;
         }
         public async Task<Employee> GetEmployeeById(int id) 
         {
@@ -159,8 +202,13 @@ namespace HRISAPI.Application.Services
                     JobPosition = chosenEmployee.JobPosition,
                     SuperVisorName = chosenEmployee.Supervisor != null ? chosenEmployee.Supervisor.EmployeeName : "No Supervisor",
                     EmploymentType = chosenEmployee.EmploymentType,
-                    Salary = chosenEmployee.Sallary,
-                    SSN = chosenEmployee.SSN
+                    Sallary = chosenEmployee.Sallary,
+                    SSN = chosenEmployee.SSN,
+                    BirthDate = chosenEmployee.BirthDate,
+                    Level = chosenEmployee.Level,
+                    SuperVisorId = chosenEmployee.SuperVisorId,
+                    Sex = chosenEmployee.Sex,
+                    DepartmentId = chosenEmployee.DepartmentId,
                 };
 
             }
@@ -179,7 +227,13 @@ namespace HRISAPI.Application.Services
                     JobPosition = chosenEmployee.JobPosition,
                     SuperVisorName = chosenEmployee.Supervisor != null ? chosenEmployee.Supervisor.EmployeeName : "No Supervisor",
                     EmploymentType = chosenEmployee.EmploymentType,
-                    Salary = chosenEmployee.Sallary
+                    Sallary = chosenEmployee.Sallary,
+                    BirthDate = chosenEmployee.BirthDate,
+                    Level = chosenEmployee.Level,
+                    SuperVisorId = chosenEmployee.SuperVisorId,
+                    Sex = chosenEmployee.Sex,
+                    SSN = chosenEmployee.SSN,
+                    DepartmentId = chosenEmployee.DepartmentId
                 };
             }
             else if (isEmployeeSupervisor)
@@ -197,7 +251,9 @@ namespace HRISAPI.Application.Services
                     JobPosition = chosenEmployee.JobPosition,
                     SuperVisorName = chosenEmployee.Supervisor != null ? chosenEmployee.Supervisor.EmployeeName : "No Supervisor",
                     EmploymentType = chosenEmployee.EmploymentType,
-                    Salary = chosenEmployee.Sallary
+                    Sallary = chosenEmployee.Sallary,
+                    SSN = chosenEmployee.SSN,
+                    DepartmentId= chosenEmployee.DepartmentId
                 };
             }
             else if (isEmployee)
@@ -215,7 +271,13 @@ namespace HRISAPI.Application.Services
                     JobPosition = chosenEmployee.JobPosition,
                     SuperVisorName = chosenEmployee.Supervisor != null ? chosenEmployee.Supervisor.EmployeeName : "No Supervisor",
                     EmploymentType = chosenEmployee.EmploymentType,
-                    Salary = null
+                    BirthDate = chosenEmployee.BirthDate,
+                    Level = chosenEmployee.Level,
+                    SuperVisorId = chosenEmployee.SuperVisorId,
+                    Sex = chosenEmployee.Sex,
+                    Sallary= chosenEmployee.Sallary,
+                    SSN = chosenEmployee.SSN,
+                    DepartmentId = chosenEmployee.DepartmentId
                 };
             }
             return employeeDetailDTO;
@@ -322,6 +384,30 @@ namespace HRISAPI.Application.Services
 
         public async Task<Response> AddRequestAddingLeave(EmployeeDTOLeaveRequest request, int workflowId)
         {
+                if (request.StartDate < DateOnly.FromDateTime(DateTime.Now))
+                {
+                    throw new BadRequestException("The StartDate must be a date in the future or current date.");
+                }
+
+                if (request.EndDate < request.StartDate)
+                {
+                   throw new BadRequestException("The EndDate must be equal or more than start date.");
+                }
+
+                if(request.FileName == "")
+            {
+                if (request.LeaveType == "Sick Leave" && request.TotalDays > 1)
+                {
+                    throw new BadRequestException("Medical certificate is required");
+
+                }
+
+            }
+
+            
+
+
+
             var userId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
             var newRequest = new Request
             {
@@ -356,7 +442,8 @@ namespace HRISAPI.Application.Services
                 StartDate = request.StartDate,
                 EndDate = request.EndDate,
                 LeaveType = request.LeaveType,
-                Reason = request.Reason
+                Reason = request.Reason,
+                FileName = request.FileName,
             };
 
             await _leaveRequestRepository.AddAsync(newLeaveRequest);
@@ -369,42 +456,42 @@ namespace HRISAPI.Application.Services
                 ActorId = userId,
                 Action = "Request submitted",
                 ActionDate = DateTime.UtcNow,
-                Comments = $"{request.LeaveType}"
+                Comments = request.Reason
             };
             await _workflowActionRepository.AddAsync(newWorkflowAction);
             await _workflowActionRepository.SaveAsync();
 
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user == null)
-            {
-                return new Response
-                {
-                    Status = "Error",
-                    Message = "User is not found"
-                };
-            }
-            var employeeId =user.EmployeeId;
-            var superVisorData = await _employeeRepository.GetFirstOrDefaultAsync(e => e.EmployeeId == employeeId,"Supervisor");
+            //var user = await _userManager.FindByIdAsync(userId);
+            //if (user == null)
+            //{
+            //    return new Response
+            //    {
+            //        Status = "Error",
+            //        Message = "User is not found"
+            //    };
+            //}
+            //var employeeId =user.EmployeeId;
+            //var superVisorData = await _employeeRepository.GetFirstOrDefaultAsync(e => e.EmployeeId == employeeId,"Supervisor");
 
-            var htmlTemplate = System.IO.File.ReadAllText(@"./Templates/EmailTemplate/AddingLeaveRequest.html");
-            htmlTemplate = htmlTemplate.Replace("{{EmployeeId}}", request.EmployeeID.ToString());
-            htmlTemplate = htmlTemplate.Replace("{{StartDate}}", request.StartDate.ToString("d MMMM yyyy", new CultureInfo("id-ID")));
-            htmlTemplate = htmlTemplate.Replace("{{EndDate}}", request.EndDate.ToString("d MMMM yyyy", new CultureInfo("id-ID")));
-            htmlTemplate = htmlTemplate.Replace("{{Name}}", superVisorData.Supervisor.EmployeeName);
-            htmlTemplate = htmlTemplate.Replace("{{Leave Type}}", request.LeaveType);
-            htmlTemplate = htmlTemplate.Replace("{{Reason}}", request.Reason);
+            //var htmlTemplate = System.IO.File.ReadAllText(@"./Templates/EmailTemplate/AddingLeaveRequest.html");
+            //htmlTemplate = htmlTemplate.Replace("{{EmployeeId}}", request.EmployeeID.ToString());
+            //htmlTemplate = htmlTemplate.Replace("{{StartDate}}", request.StartDate.ToString("d MMMM yyyy", new CultureInfo("id-ID")));
+            //htmlTemplate = htmlTemplate.Replace("{{EndDate}}", request.EndDate.ToString("d MMMM yyyy", new CultureInfo("id-ID")));
+            //htmlTemplate = htmlTemplate.Replace("{{Name}}", superVisorData.Supervisor.EmployeeName);
+            //htmlTemplate = htmlTemplate.Replace("{{Leave Type}}", request.LeaveType);
+            //htmlTemplate = htmlTemplate.Replace("{{Reason}}", request.Reason);
 
-            var mailData = new MailData
-            {
-                EmailToName = superVisorData.Supervisor.EmployeeName,
-                EmailSubject = "Leave request to add",
-            };
+            //var mailData = new MailData
+            //{
+            //    EmailToName = superVisorData.Supervisor.EmployeeName,
+            //    EmailSubject = "Leave request to add",
+            //};
 
-            mailData.EmailToIds.Add(superVisorData.Supervisor.EmailAddress);
-            mailData.EmailToIds.Add(user.Email);
-            mailData.EmailBody = htmlTemplate;
+            //mailData.EmailToIds.Add(superVisorData.Supervisor.EmailAddress);
+            //mailData.EmailToIds.Add(user.Email);
+            //mailData.EmailBody = htmlTemplate;
 
-            var emailResult = _emailService.SendEmailAsync(mailData);
+            //var emailResult = _emailService.SendEmailAsync(mailData);
             return new Response
             {
                 Status = "Success",
@@ -498,5 +585,13 @@ namespace HRISAPI.Application.Services
 
             return employeesDTO;
         }
+        //objek data registrasi Recruiter
+        //public async Task<IEnumerable<EmployeeDetailPDF>> ApproveRegistrationRecruiterRequest(int recruiterRequestId)
+        //{
+        // jadi dari sini recruiter bisa register tapi register datanya bakal dikirim ke HR ??
+        // nanti dari sini bakal nge add data ke tabel user semisal recruiter diapprove
+        // reject semisal recruiter direject, ini mungkin ganti status di tabel recruiter request
+        //}
+       
     }
 }

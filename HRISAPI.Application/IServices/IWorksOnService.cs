@@ -9,7 +9,7 @@ namespace HRISAPI.Application.IServices
     {
         Task<Response> AddWorksOn(DTOWorksOn worksOn);
         Task<IEnumerable<DTOWorksOnDetail>> GetAllWorksOns();
-        Task<WorksOn> GetWorksOnById(int id);
+        Task<object> GetWorksOnById(int id);
         Task<DTOWorksOnDetail> UpdateWorksOn(DTOWorksOn workson, int id);
         Task<bool> DeleteWorksOn(int id);
         Task<byte[]> GenerateProjectReportPDF();

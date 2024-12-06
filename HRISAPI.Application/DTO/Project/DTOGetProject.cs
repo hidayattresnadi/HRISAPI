@@ -12,5 +12,6 @@ namespace HRISAPI.Application.DTO.Project
         public string Name { get; set; }
         public string LocationName { get; set; }
         public string DepartmentName { get; set; }
+        public int DeptId { get; set; }
     }
 }

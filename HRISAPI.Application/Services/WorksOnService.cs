@@ -105,7 +105,7 @@ namespace HRISAPI.Application.Services
             bool isHrManager = userRoles.Contains(Roles.Role_HR_Manager);
             bool isEmployee = userRoles.Contains(Roles.Role_Employee);
 
-            var worksOns = await _worksOnRepository.GetAllAsync("Project,Employee,Department");
+            var worksOns = await _worksOnRepository.GetAllAsync("Project,Employee");
 
             if (isAdmin || isHrManager)
             {
@@ -130,14 +130,67 @@ namespace HRISAPI.Application.Services
                 ProjName = w.Project.Name,
                 DeptName = w.Project.Department != null ? w.Project.Department.Name : "No Department",
                 SuperVisorName = w.Employee.Supervisor != null ? w.Employee.Supervisor.EmployeeName : "No Supervisor",
-                Hoursworked = w.Hoursworked
+                Hoursworked = w.Hoursworked,
+                WorksNo = w.WorksOnId
             }).ToList();
             return dtoWorksOn;
         }
-        public async Task<WorksOn> GetWorksOnById(int id)
+        public async Task<object> GetWorksOnById(int id)
         {
-            WorksOn chosenWorksOn = await _worksOnRepository.GetFirstOrDefaultAsync(foundWorksOn => foundWorksOn.WorksOnId == id);
-            return chosenWorksOn;
+            var employeeId = _httpContextAccessor.HttpContext?.User?.FindFirstValue("EmployeeId");
+            int? intEmployeeId = string.IsNullOrEmpty(employeeId) ? (int?)null : int.Parse(employeeId);
+            var userRoles = _httpContextAccessor.HttpContext?.User?.Claims
+                .Where(c => c.Type == ClaimTypes.Role)
+                .Select(c => c.Value)
+                .ToList();
+
+            bool isAdmin = userRoles.Contains(Roles.Role_Administrator);
+            bool isDepartmentManager = userRoles.Contains(Roles.Role_Department_Manager);
+            bool isEmployeeSupervisor = userRoles.Contains(Roles.Role_Employee_Supervisor);
+            bool isHrManager = userRoles.Contains(Roles.Role_HR_Manager);
+            bool isEmployee = userRoles.Contains(Roles.Role_Employee);
+
+            WorksOn chosenWorksOn = await _worksOnRepository.GetFirstOrDefaultAsync(foundWorksOn => foundWorksOn.WorksOnId == id, "Project,Employee");
+
+            if (isAdmin)
+            {
+
+            }
+            else if (isDepartmentManager)
+            {
+                var foundDepartment = await _departmentRepository.GetFirstOrDefaultAsync(d => d.MgrEmpNo == intEmployeeId);
+                if (chosenWorksOn.Project.DeptId != foundDepartment.DepartmentId)
+                {
+                    throw new UnauthorizedAccessException("You are not authorized. Please ensure you have the correct permissions.");
+                }
+            }
+            else if (isEmployeeSupervisor)
+            {
+                if (chosenWorksOn.Employee.SuperVisorId != intEmployeeId)
+                {
+                    throw new UnauthorizedAccessException("You are not authorized. Please ensure you have the correct permissions.");
+                }
+            }
+            else if (isEmployee)
+            {
+                if (chosenWorksOn.EmpNo != intEmployeeId)
+                {
+                    throw new UnauthorizedAccessException("You are not authorized. Please ensure you have the correct permissions.");
+                }
+            }
+            var worksOnDetail = new
+            {
+                EmpName = chosenWorksOn.Employee.EmployeeName,
+                ProjName = chosenWorksOn.Project.Name,
+                DeptName = chosenWorksOn.Project.Department != null ? chosenWorksOn.Project.Department.Name : "No Department",
+                SuperVisorName = chosenWorksOn.Employee.Supervisor != null ? chosenWorksOn.Employee.Supervisor.EmployeeName : "No Supervisor",
+                Hoursworked = chosenWorksOn.Hoursworked,
+                WorksNo = chosenWorksOn.WorksOnId,
+                empNo = chosenWorksOn.EmpNo,
+                projNo = chosenWorksOn.ProjNo,
+                deptNo = chosenWorksOn.Project.DeptId
+            };
+            return worksOnDetail;
         }
 
         private async Task<WorksOn> GetWorksOnByIdBasedOnRoles(List<string> userRoles,int? employeeId,int id)
@@ -167,6 +220,7 @@ namespace HRISAPI.Application.Services
                     throw new UnauthorizedAccessException("You are not authorized. Please ensure you have the correct permissions.");
                 }
             }
+
             return chosenWorksOn;
         }
         public async Task<DTOWorksOnDetail> UpdateWorksOn(DTOWorksOn worksOn, int id)

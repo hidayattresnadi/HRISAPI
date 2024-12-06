@@ -27,7 +27,7 @@ namespace HRISAPI.Infrastructure.Repositories
             foundDepartment.Name = department.Name;
             return foundDepartment;
         }
-        public async Task<IEnumerable<Department>> GetAllDepartmentsSorted(QueryParameterDepartment? queryParameter = null)
+        public async Task<(IEnumerable<Department>, int totalCount)> GetAllDepartmentsSorted(QueryParameterDepartment? queryParameter = null)
         {
             var query = _db.Departments.AsQueryable();
             query = query.Include(d => d.Manager).Include(d => d.Locations).ThenInclude(dl => dl.Location);
@@ -52,8 +52,13 @@ namespace HRISAPI.Infrastructure.Repositories
                     };
                 }
             }
+            int totalCount = await query.CountAsync();
+            if (queryParameter.PageSize == 0)
+            {
+                queryParameter.PageSize = totalCount;
+            }
             query = query.Skip((queryParameter.PageNumber - 1) * queryParameter.PageSize).Take(queryParameter.PageSize);
-            return await query.ToListAsync();
+            return (await query.ToListAsync(),totalCount);
         }
     }
 }

@@ -16,9 +16,10 @@ namespace HRISAPI.Application.Repositories
         Employee Update(Employee foundEmployee, DTOEmployeeAdd employee);
         Employee UpdateForEmployee(Employee foundEmployee, DTOEmployeeAdd employee);
         Task<Employee> AssignEmployeeToDepartment(Employee employee, int id);
-        Task<IEnumerable<Employee>> GetAllEmployeesSorted(string? includeProperties = null,QueryParameter.QueryParameter? queryParameter = null);
+        Task<(IEnumerable<Employee>, int totalCount)> GetAllEmployeesSorted(string? includeProperties = null,QueryParameter.QueryParameter? queryParameter = null);
         Task<Employee> DeactivateEmployee(Employee employee, string deleteReasoning);
         Task<IEnumerable<EmployeeDistributionDTO>> GetEmployeesDistribution();
         Task<IEnumerable<DepartmentSallaryDTO>> GetDepartmentSallaries();
+        Task<EmployeeDto> GetEmployeeNameByIdAsync(int employeeId);
     }
 }

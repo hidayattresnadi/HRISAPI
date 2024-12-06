@@ -22,6 +22,7 @@ namespace HRISAPI.Domain.Models
         [ForeignKey("Process")]
         public int ProcessId { get; set; }
         public virtual Process Process { get; set; }
+        public string? FileName { get; set; }
 
     }
 }

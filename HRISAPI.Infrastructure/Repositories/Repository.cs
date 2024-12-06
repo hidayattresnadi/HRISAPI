@@ -40,7 +40,7 @@ namespace HRISAPI.Infrastructure.Repositories
         {
             return await _dbSet.FirstOrDefaultAsync(expression);
         }
-        public async Task<T> GetFirstOrDefaultAsync(Expression<Func<T, bool>> expression, string? includeProperties = null)
+        public async Task<T> GetFirstOrDefaultAsync(Expression<Func<T, bool>> expression, string? includeProperties = null, Expression<Func<T, object>>? orderByExpression = null)
         {
             IQueryable<T> entities = _dbSet;
 
@@ -52,6 +52,11 @@ namespace HRISAPI.Infrastructure.Repositories
                 {
                     entities = entities.Include(include);
                 }
+            }
+
+            if (orderByExpression != null)
+            {
+                entities = entities.OrderBy(orderByExpression);
             }
 
             // Apply the filter expression and return the first or default result
@@ -81,7 +86,7 @@ namespace HRISAPI.Infrastructure.Repositories
             }
             return await entities.ToListAsync();
         }
-        public async Task<IEnumerable<T>> GetAllAsync(Expression<Func<T, bool>> expression, string? includeProperties = null)
+        public async Task<IEnumerable<T>> GetAllAsync(Expression<Func<T, bool>> expression, string? includeProperties = null, Expression<Func<T, object>>? orderByExpression = null)
         {
             IQueryable<T> entities = _dbSet;
             if (!string.IsNullOrEmpty(includeProperties))
@@ -92,6 +97,12 @@ namespace HRISAPI.Infrastructure.Repositories
                     entities = entities.Include(include);
                 }
             }
+
+            if (orderByExpression != null)
+            {
+                entities = entities.OrderBy(orderByExpression);
+            }
+
             return await entities.Where(expression).ToListAsync();
         }
         public bool Remove(T entity)

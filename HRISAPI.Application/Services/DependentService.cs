@@ -123,7 +123,8 @@ namespace HRISAPI.Application.Services
                 Sex = chosenDependent.Sex,
                 BirthDate = chosenDependent.BirthDate,
                 Relations = chosenDependent.Relations,
-                Name = chosenDependent.Name
+                Name = chosenDependent.Name,
+                EmployeeId = chosenDependent?.EmployeeId,
             };
             return dependentDTO;
         }

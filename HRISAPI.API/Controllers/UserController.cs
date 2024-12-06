@@ -31,22 +31,22 @@ namespace HRISAPI.API.Controllers
                 return BadRequest(result.Message);
             return Ok(result);
         }
-        [Authorize(Roles = Roles.Role_Administrator)]
+        //[Authorize(Roles = Roles.Role_Administrator)]
         [HttpGet]
         public async Task<IActionResult> GetAllUsersAsync()
         {
             var users = await _authService.GetAllUsersAsync();
             return Ok(users);
         }
-        [Authorize(Roles = Roles.Role_Administrator)]
-        [HttpGet("/{id}")]
+        //[Authorize(Roles = Roles.Role_Administrator)]
+        [HttpGet("/{userId}")]
         public async Task<IActionResult> GetUserByIdAsync(string userId)
         {
             var user = await _authService.GetUserByIdAsync(userId);
             return Ok(user);
         }
         [Authorize(Roles = Roles.Role_Administrator)]
-        [HttpPatch("/{id}")]
+        [HttpPatch("/{userId}")]
         public async Task<IActionResult> UpdateUserAsync(string userId, [FromBody] UpdateUserDTO updateUserData)
         {
             var user = await _authService.UpdateUser(userId,updateUserData);
@@ -54,9 +54,9 @@ namespace HRISAPI.API.Controllers
         }
         [Authorize(Roles = Roles.Role_Administrator)]
         [HttpDelete("/{id}")]
-        public async Task<IActionResult> DeleteUserAsync(string userId)
+        public async Task<IActionResult> DeleteUserAsync(string id)
         {
-            var user = await _authService.DeleteUser(userId);
+            var user = await _authService.DeleteUser(id);
             return Ok(user);
         }
 
@@ -71,35 +71,75 @@ namespace HRISAPI.API.Controllers
             var result = await _authService.Login(model);
 
             if (result.Status == "Error")
-
+            {
                 return BadRequest(result.Message);
+            }
+            else
+            {
+                var resultSuccess = result as AuthLoginResponse;
+                SetRefreshTokenCookie("AuthToken", resultSuccess!.Token, resultSuccess.ExpiredOn);
 
+                SetRefreshTokenCookie("RefreshToken", resultSuccess.RefreshToken,
+                resultSuccess.RefreshTokenExpireOn);
+            }
             return Ok(result);
+        }
+        private void SetRefreshTokenCookie(string tokenType, string? token, DateTime? expires)
+        {
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,  // Hanya dapat diakses oleh server
+                Secure = false,    // Hanya dikirim melalui HTTPS
+                SameSite = SameSiteMode.None, // Cegah serangan CSRF
+                Expires = expires // Waktu kadaluarsa token
+            };
+
+            Response.Cookies.Append(tokenType, token, cookieOptions);
         }
         [HttpPost("refresh-Token")]
-        public async Task<IActionResult> RefreshTokenAsync([FromBody] RefreshTokenRequest request)
+        public async Task<IActionResult> RefreshTokenAsync()
         {
-            if (!ModelState.IsValid)
+            var refreshToken = Request.Cookies["RefreshToken"];
 
-                return BadRequest(ModelState);
-
-            var result = await _authService.RefreshToken(request);
+            var result = await _authService.RefreshToken(refreshToken);
 
             if (result.Status == "Error")
-
+            {
                 return BadRequest(result.Message);
+            }
+            else
+            {
+                var resultSuccess = result as AuthLoginResponse;
+                Console.WriteLine(resultSuccess);
+                SetRefreshTokenCookie("AuthToken", resultSuccess.Token, resultSuccess.ExpiredOn);
+                //SetRefreshTokenCookie("RefreshToken", result.RefreshToken, result.RefreshTokenExpiration);
+            }
+
+
+
+
 
             return Ok(result);
         }
+
+        [Authorize]
         [HttpPatch("Log-Out")]
-        public async Task<IActionResult> LogoutAsync([FromBody]string email)
+        public async Task<IActionResult> LogoutAsync([FromQuery]string email)
         {
 
             var result = await _authService.LogoutAsync(email);
 
             if (result.Status == "Error")
-
+            {
                 return BadRequest(result.Message);
+            }
+
+            Response.Cookies.Delete("AuthToken", new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict
+            });
 
             return Ok(result);
         }

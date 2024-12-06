@@ -37,10 +37,12 @@ namespace HRISAPI.Infrastructure.Repositories
             }
             else if (isDepartmentManager)
             {
-                query = query.Where(p => p.Department.Employees.Any(e => e.EmployeeId == intEmployeeId.Value));
+                // Filter projects to include only those in the manager's department
+                query = query.Where(p => p.Department.MgrEmpNo == intEmployeeId.Value);
             }
             else if (isEmployeeSupervisor)
             {
+                // Filter projects to include only those in departments supervised by the employee
                 query = query.Where(p => p.Department.Employees.Any(e => e.SuperVisorId == intEmployeeId.Value));
             }
             else if (isEmployee)

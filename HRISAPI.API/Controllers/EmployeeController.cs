@@ -2,8 +2,10 @@
 using HRISAPI.Application.DTO.Employee;
 using HRISAPI.Application.IServices;
 using HRISAPI.Application.QueryParameter;
+using HRISAPI.Application.Services;
 using HRISAPI.Domain.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HRISAPI.API.Controllers
@@ -13,9 +15,14 @@ namespace HRISAPI.API.Controllers
     public class EmployeeController : ControllerBase
     {
         private readonly IEmployeeService _employeeService;
-        public EmployeeController(IEmployeeService employeeService)
+        private readonly ILeaveRequestService _leaveRequestService;
+        private readonly IWebHostEnvironment _environment;
+        public EmployeeController(IEmployeeService employeeService, ILeaveRequestService leaveRequestService, IWebHostEnvironment webHostEnvironment)
         {
             _employeeService = employeeService;
+            _leaveRequestService = leaveRequestService;
+            _environment = webHostEnvironment;
+
         }
         [Authorize(Roles = Roles.Role_Administrator + "," + Roles.Role_HR_Manager)]
         [HttpPost]
@@ -92,6 +99,86 @@ namespace HRISAPI.API.Controllers
         {
             var employees = await _employeeService.GetEmployeeDataPraPDF(departmentId);
             return Ok(employees);
+        }
+
+        [Authorize]
+        [HttpGet("leave_request")]
+        public async Task<IActionResult> GetLeavesRequestLists([FromQuery] QueryParameterLeaveRequest request)
+        {
+            var leavesType = await _leaveRequestService.GetLeaveRequestsLists(request);
+            return Ok(leavesType);
+        }
+
+        [HttpPost("upload-file")]
+        public async Task<IActionResult> UploadFile(IFormFile formFile)
+        {
+            try
+            {
+                //max size upload 5MB
+                long maxFileSize = 5 * 1024 * 1024;
+                string[] AllowedFileTypes =
+                {
+                    "application/pdf", // PDF
+                    "image/jpeg", // JPG/JPEG
+                    "image/jpg", // JPG
+                };
+
+
+                if (formFile == null || formFile.Length == 0)
+                {
+                    return BadRequest("File is empty");
+                }
+
+                if (formFile.Length > maxFileSize)
+                {
+                    return BadRequest("File exceeds 2 MB limit");
+                }
+
+                if (!AllowedFileTypes.Contains(formFile.ContentType))
+                {
+                    return BadRequest("Only pdf and word documents are allowed");
+                }
+                string uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads");
+                if (!Directory.Exists(uploadsFolder))
+                    Directory.CreateDirectory(uploadsFolder);
+
+                string uniqueFileName = Guid.NewGuid().ToString() + "_" + formFile.FileName;
+
+                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                // Save file to directory
+
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+
+                {
+
+                    await formFile.CopyToAsync(fileStream);
+
+                }
+
+                return Ok($"{uniqueFileName}");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+        [HttpGet("download/{fileName}")]
+        public IActionResult DownloadFile(string fileName)
+        {
+            // Tentukan lokasi folder tempat file disimpan
+            var filePath = Path.Combine(_environment.WebRootPath, "uploads", fileName);
+
+            // Periksa apakah file ada
+            if (!System.IO.File.Exists(filePath))
+            {
+                return NotFound(); 
+            }
+
+            // Mengembalikan file untuk diunduh
+            var fileBytes = System.IO.File.ReadAllBytes(filePath);
+            return File(fileBytes, "application/octet-stream", fileName);
         }
     }
 }

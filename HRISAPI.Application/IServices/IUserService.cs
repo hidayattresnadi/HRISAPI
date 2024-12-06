@@ -16,7 +16,7 @@ namespace HRISAPI.Application.IServices
         Task<List<UserDTO>> GetAllUsersAsync();
         Task<UserDTO> GetUserByIdAsync(string userId);
         Task<Response> Login(Login loginData);
-        Task<Response> RefreshToken(RefreshTokenRequest request);
+        Task<Response> RefreshToken(string refreshToken);
         Task<Response> LogoutAsync(string email);
     }
 }

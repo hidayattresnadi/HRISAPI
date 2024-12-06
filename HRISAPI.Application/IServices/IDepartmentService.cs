@@ -9,7 +9,7 @@ namespace HRISAPI.Application.IServices
     public interface IDepartmentService
     {
         Task<DTOResultDepartmentAdd> AddDepartment(DTODepartmentAdd department);
-        Task<IEnumerable<DTODepartmentLocation>> GetAllDepartments(QueryParameterDepartment? queryParameter);
+        Task<object> GetAllDepartments(QueryParameterDepartment? queryParameter);
         Task<Department> GetDepartmentById(int id);
         Task<DTODepartment> GetDepartmentDetailById(int id);
         Task<DTOResultDepartmentAdd> UpdateDepartment(DTOResultDepartmentAdd department, int id);

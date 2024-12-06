@@ -1,4 +1,5 @@
 ﻿using HRISAPI.Application.DTO.LeaveRequest;
+using HRISAPI.Application.QueryParameter;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,5 +12,7 @@ namespace HRISAPI.Application.IServices
     {
         Task<byte[]> GenerateLeaveRequestsPDF(LeaveRequestDTOFiltered request);
         Task<IEnumerable<LeaveRequestGroupDTO>> GetLeavesType(LeaveRequestDTOFiltered request);
+        Task<object> GetLeaveRequestDetail(int id);
+        Task<object> GetLeaveRequestsLists(QueryParameterLeaveRequest request);
     }
 }

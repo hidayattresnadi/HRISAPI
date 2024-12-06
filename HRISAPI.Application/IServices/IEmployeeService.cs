@@ -14,7 +14,7 @@ namespace HRISAPI.Application.IServices
     public interface IEmployeeService
     {
         Task<DTOEmployeeGetAll> AddEmployee(DTOEmployeeAdd employee);
-        Task<IEnumerable<DTOEmployeeGetAll>> GetAllEmployees(QueryParameter.QueryParameter? queryParameter);
+        Task<object> GetAllEmployees(QueryParameter.QueryParameter? queryParameter);
         Task<Employee> GetEmployeeById(int id);
         Task<DTOEmployeeGetDetail> GetEmployeeDetail(int id);
         Task<DTOUpdatedEmployee> UpdateEmployee(DTOEmployeeAdd employee, int id);

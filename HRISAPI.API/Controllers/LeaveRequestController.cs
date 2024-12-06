@@ -1,7 +1,9 @@
 ﻿using HRISAPI.Application.DTO.Employee;
 using HRISAPI.Application.DTO.LeaveRequest;
 using HRISAPI.Application.IServices;
+using HRISAPI.Application.QueryParameter;
 using HRISAPI.Application.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HRISAPI.API.Controllers
@@ -28,6 +30,25 @@ namespace HRISAPI.API.Controllers
         public async Task<IActionResult> GetLeavesType([FromQuery] LeaveRequestDTOFiltered request)
         {
             var leavesType = await _leaveRequestService.GetLeavesType(request);
+            return Ok(leavesType);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetLeavesRequestDetail(int id)
+        {
+            var leavesType = await _leaveRequestService.GetLeaveRequestDetail(id);
+            if (leavesType == null)
+            {
+                return BadRequest("Not Found");
+            }
+            return Ok(leavesType);
+        }
+
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> GetLeavesRequestLists([FromQuery] QueryParameterLeaveRequest request)
+        {
+            var leavesType = await _leaveRequestService.GetLeaveRequestsLists(request);
             return Ok(leavesType);
         }
     }

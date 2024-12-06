@@ -111,41 +111,41 @@ namespace HRISAPI.Application.Services
                 await _workflowActionRepository.AddAsync(newWorkflowAction);
                 await _workflowActionRepository.SaveAsync();
 
-                var leaveRequest = await _leaveRequestRepository.GetFirstOrDefaultAsync(l => l.ProcessId == process.ProcessId);
+                //var leaveRequest = await _leaveRequestRepository.GetFirstOrDefaultAsync(l => l.ProcessId == process.ProcessId);
 
-                var htmlTemplate = System.IO.File.ReadAllText(@"./Templates/EmailTemplate/ApprovedLeaveRequest.html");
-                htmlTemplate = ReplacePlaceholders(htmlTemplate, foundEmployee, leaveRequest, foundEmployeeData.Supervisor.EmployeeName,requestApproval.Comment);
+                //var htmlTemplate = System.IO.File.ReadAllText(@"./Templates/EmailTemplate/ApprovedLeaveRequest.html");
+                //htmlTemplate = ReplacePlaceholders(htmlTemplate, foundEmployee, leaveRequest, foundEmployeeData.Supervisor.EmployeeName,requestApproval.Comment);
 
-                var mailData = new MailData
-                {
-                    EmailToName = foundEmployeeData.EmployeeName,
-                    EmailSubject = "Leave request is approved by Supervisor",
-                };
+                //var mailData = new MailData
+                //{
+                //    EmailToName = foundEmployeeData.EmployeeName,
+                //    EmailSubject = "Leave request is approved by Supervisor",
+                //};
 
-                mailData.EmailToIds.Add(foundEmployeeData.Supervisor.EmailAddress);
-                mailData.EmailToIds.Add(foundEmployeeData.EmailAddress);
-                mailData.EmailBody = htmlTemplate;
+                //mailData.EmailToIds.Add(foundEmployeeData.Supervisor.EmailAddress);
+                //mailData.EmailToIds.Add(foundEmployeeData.EmailAddress);
+                //mailData.EmailBody = htmlTemplate;
 
-                var emailResult = await _emailService.SendEmailAsync(mailData);
+                //var emailResult = await _emailService.SendEmailAsync(mailData);
 
-                var workflowSequenceNext = await _workflowSequenceRepository.GetFirstOrDefaultAsync(wfs => wfs.StepId == nextStepId.NextStepId);
-                var nextRole = await _roleManager.Roles.FirstOrDefaultAsync(r => r.Id == workflowSequenceNext.RequiredRole);
-                var usersInRole = await _userManager.GetUsersInRoleAsync(nextRole.Name);
-                var user = usersInRole.FirstOrDefault();
-                var emailHRManager = await _employeeRepository.GetFirstOrDefaultAsync(e => e.EmployeeId == user.EmployeeId);
+                //var workflowSequenceNext = await _workflowSequenceRepository.GetFirstOrDefaultAsync(wfs => wfs.StepId == nextStepId.NextStepId);
+                //var nextRole = await _roleManager.Roles.FirstOrDefaultAsync(r => r.Id == workflowSequenceNext.RequiredRole);
+                //var usersInRole = await _userManager.GetUsersInRoleAsync(nextRole.Name);
+                //var user = usersInRole.FirstOrDefault();
+                //var emailHRManager = await _employeeRepository.GetFirstOrDefaultAsync(e => e.EmployeeId == user.EmployeeId);
 
-                var htmlTemplateHRManager = System.IO.File.ReadAllText(@"./Templates/EmailTemplate/RequestApprovedToHR.html");
-                htmlTemplateHRManager = ReplacePlaceholders(htmlTemplateHRManager, foundEmployee, leaveRequest, user.UserName,requestApproval.Comment);
+                //var htmlTemplateHRManager = System.IO.File.ReadAllText(@"./Templates/EmailTemplate/RequestApprovedToHR.html");
+                //htmlTemplateHRManager = ReplacePlaceholders(htmlTemplateHRManager, foundEmployee, leaveRequest, user.UserName,requestApproval.Comment);
 
-                var mailDataHRManager = new MailData
-                {
-                    EmailToName = user.UserName,
-                    EmailSubject = "Leave request is approved by Supervisor",
-                };
+                //var mailDataHRManager = new MailData
+                //{
+                //    EmailToName = user.UserName,
+                //    EmailSubject = "Leave request is approved by Supervisor",
+                //};
 
-                mailDataHRManager.EmailToIds.Add(emailHRManager.EmailAddress);
-                mailDataHRManager.EmailBody = htmlTemplateHRManager;
-                await _emailService.SendEmailAsync(mailDataHRManager);
+                //mailDataHRManager.EmailToIds.Add(emailHRManager.EmailAddress);
+                //mailDataHRManager.EmailBody = htmlTemplateHRManager;
+                //await _emailService.SendEmailAsync(mailDataHRManager);
             }
             else if (requestApproval.RequestStatus == "Request Approved" && role.Name == Roles.Role_HR_Manager)
             {
@@ -168,39 +168,39 @@ namespace HRISAPI.Application.Services
                 process.Status = "Accepted";
                 await _processRepository.SaveAsync();
 
-                var newWorkflowActionAccepted = new WorkflowAction
-                {
-                    ProcessId = process.ProcessId,
-                    StepId = process.CurrentStepId,
-                    ActorId = userId,
-                    Action = "Request Approved",
-                    ActionDate = DateTime.UtcNow,
-                    Comments = requestApproval.Comment
-                };
-                await _workflowActionRepository.AddAsync(newWorkflowActionAccepted);
-                await _workflowActionRepository.SaveAsync();
+                //var newWorkflowActionAccepted = new WorkflowAction
+                //{
+                //    ProcessId = process.ProcessId,
+                //    StepId = process.CurrentStepId,
+                //    ActorId = userId,
+                //    Action = "Request Approved",
+                //    ActionDate = DateTime.UtcNow,
+                //    Comments = requestApproval.Comment
+                //};
+                //await _workflowActionRepository.AddAsync(newWorkflowActionAccepted);
+                //await _workflowActionRepository.SaveAsync();
 
                 var request = await _requestRepository.GetFirstOrDefaultAsync(r => r.RequestId == process.RequestId);
                 request.EndDate = DateTime.UtcNow;
                 await _requestRepository.SaveAsync();
 
-                var leaveRequest = await _leaveRequestRepository.GetFirstOrDefaultAsync(l => l.ProcessId == process.ProcessId);
-                var emailHRManager = await _userManager.FindByIdAsync(userId);
-                var htmlTemplate = System.IO.File.ReadAllText(@"./Templates/EmailTemplate/ApprovedLeaveRequestHR.html");
-                htmlTemplate = ReplacePlaceholders(htmlTemplate, foundEmployee, leaveRequest, foundEmployeeData.EmployeeName, requestApproval.Comment);
+                //var leaveRequest = await _leaveRequestRepository.GetFirstOrDefaultAsync(l => l.ProcessId == process.ProcessId);
+                //var emailHRManager = await _userManager.FindByIdAsync(userId);
+                //var htmlTemplate = System.IO.File.ReadAllText(@"./Templates/EmailTemplate/ApprovedLeaveRequestHR.html");
+                //htmlTemplate = ReplacePlaceholders(htmlTemplate, foundEmployee, leaveRequest, foundEmployeeData.EmployeeName, requestApproval.Comment);
 
-                var mailData = new MailData
-                {
-                    EmailToName = foundEmployeeData.EmployeeName,
-                    EmailSubject = "Leave request is approved by Supervisor",
-                };
+                //var mailData = new MailData
+                //{
+                //    EmailToName = foundEmployeeData.EmployeeName,
+                //    EmailSubject = "Leave request is approved by Supervisor",
+                //};
 
-                mailData.EmailToIds.Add(foundEmployeeData.Supervisor.EmailAddress);
-                mailData.EmailToIds.Add(foundEmployeeData.EmailAddress);
-                mailData.EmailToIds.Add(emailHRManager.Email);
-                mailData.EmailBody = htmlTemplate;
+                //mailData.EmailToIds.Add(foundEmployeeData.Supervisor.EmailAddress);
+                //mailData.EmailToIds.Add(foundEmployeeData.EmailAddress);
+                //mailData.EmailToIds.Add(emailHRManager.Email);
+                //mailData.EmailBody = htmlTemplate;
 
-                var emailResult = _emailService.SendEmailAsync(mailData);
+                //var emailResult = _emailService.SendEmailAsync(mailData);
             }
             else if (requestApproval.RequestStatus == "Request Rejected")
             {
@@ -256,46 +256,46 @@ namespace HRISAPI.Application.Services
                 process.CurrentStepId = nextStepId.NextStepId;
                 await _processRepository.SaveAsync();
 
-                var newWorkflowAction = new WorkflowAction
-                {
-                    ProcessId = process.ProcessId,
-                    StepId = process.CurrentStepId,
-                    ActorId = userId,
-                    Action = "Request Rejected",
-                    ActionDate = DateTime.UtcNow,
-                    Comments = requestApproval.Comment
-                };
-                await _workflowActionRepository.AddAsync(newWorkflowAction);
-                await _workflowActionRepository.SaveAsync();
+                //var newWorkflowAction = new WorkflowAction
+                //{
+                //    ProcessId = process.ProcessId,
+                //    StepId = process.CurrentStepId,
+                //    ActorId = userId,
+                //    Action = "Request Rejected",
+                //    ActionDate = DateTime.UtcNow,
+                //    Comments = requestApproval.Comment
+                //};
+                //await _workflowActionRepository.AddAsync(newWorkflowAction);
+                //await _workflowActionRepository.SaveAsync();
 
-                var request = await _requestRepository.GetFirstOrDefaultAsync(r => r.RequestId == process.RequestId);
-                request.EndDate = DateTime.UtcNow;
-                await _requestRepository.SaveAsync();
+                //var request = await _requestRepository.GetFirstOrDefaultAsync(r => r.RequestId == process.RequestId);
+                //request.EndDate = DateTime.UtcNow;
+                //await _requestRepository.SaveAsync();
 
-                if(role.Name == Roles.Role_HR_Manager)
-                {
-                    var foundEmployee = await _userManager.FindByIdAsync(process.RequesterId);
-                    var foundEmployeeData = await _employeeRepository.GetFirstOrDefaultAsync(e => e.EmployeeId == foundEmployee.EmployeeId, "Supervisor");
-                    var leaveRequest = await _leaveRequestRepository.GetFirstOrDefaultAsync(l => l.ProcessId == process.ProcessId);
-                    var emailHRManager = await _userManager.FindByIdAsync(userId);
-                    var htmlTemplate = System.IO.File.ReadAllText(@"./Templates/EmailTemplate/RequestLeaveRejected.html");
-                    htmlTemplate = ReplacePlaceholders(htmlTemplate, foundEmployee, leaveRequest, foundEmployeeData.EmployeeName, requestApproval.Comment);
-                    htmlTemplate = htmlTemplate.Replace("{{Role}}", Roles.Role_HR_Manager);
+                //if(role.Name == Roles.Role_HR_Manager)
+                //{
+                //    var foundEmployee = await _userManager.FindByIdAsync(process.RequesterId);
+                //    var foundEmployeeData = await _employeeRepository.GetFirstOrDefaultAsync(e => e.EmployeeId == foundEmployee.EmployeeId, "Supervisor");
+                //    var leaveRequest = await _leaveRequestRepository.GetFirstOrDefaultAsync(l => l.ProcessId == process.ProcessId);
+                //    var emailHRManager = await _userManager.FindByIdAsync(userId);
+                //    var htmlTemplate = System.IO.File.ReadAllText(@"./Templates/EmailTemplate/RequestLeaveRejected.html");
+                //    htmlTemplate = ReplacePlaceholders(htmlTemplate, foundEmployee, leaveRequest, foundEmployeeData.EmployeeName, requestApproval.Comment);
+                //    htmlTemplate = htmlTemplate.Replace("{{Role}}", Roles.Role_HR_Manager);
 
-                    var mailData = new MailData
-                    {
-                        EmailToName = foundEmployeeData.EmployeeName,
-                        EmailSubject = "Leave request is rejected by HR Manager",
-                    };
+                //    var mailData = new MailData
+                //    {
+                //        EmailToName = foundEmployeeData.EmployeeName,
+                //        EmailSubject = "Leave request is rejected by HR Manager",
+                //    };
 
-                    mailData.EmailToIds.Add(foundEmployeeData.Supervisor.EmailAddress);
-                    mailData.EmailToIds.Add(foundEmployeeData.EmailAddress);
-                    mailData.EmailToIds.Add(emailHRManager.Email);
-                    mailData.EmailBody = htmlTemplate;
+                //    mailData.EmailToIds.Add(foundEmployeeData.Supervisor.EmailAddress);
+                //    mailData.EmailToIds.Add(foundEmployeeData.EmailAddress);
+                //    mailData.EmailToIds.Add(emailHRManager.Email);
+                //    mailData.EmailBody = htmlTemplate;
 
-                    var emailResult = _emailService.SendEmailAsync(mailData);
+                //    var emailResult = _emailService.SendEmailAsync(mailData);
 
-                }
+                //}
 
             }
             return new Response

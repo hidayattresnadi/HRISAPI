@@ -14,5 +14,6 @@ namespace HRISAPI.Application.DTO
         public int Level { get; set; }
         public string EmploymentType { get; set; }
         public DateTime LastUpdatedDate { get; set; }
+        public int EmpNo { get; set; }
     }
 }

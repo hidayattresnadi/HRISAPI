@@ -1,5 +1,3 @@
-using System.Net;
-using System.Text.Json;
 using HRISAPI.API.HandlingError;
 using HRISAPI.Application.IServices;
 using HRISAPI.Application.Services;
@@ -8,25 +6,48 @@ using HRISAPI.Infrastructure;
 using HRISAPI.Infrastructure.Context;
 using LibrarySystem.Application.IServices;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
+using System.Net;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173") // Ganti dengan URL frontend Anda
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials(); // Mengizinkan credentials
+    });
+});
+
+
+// Register Cookie Policy
+builder.Services.AddCookiePolicy(options =>
+{
+    options.HttpOnly = HttpOnlyPolicy.Always;
+    options.Secure = CookieSecurePolicy.Always;
+});
+
+// Add application-specific services
 builder.Services.ConfigurePersistence(builder.Configuration);
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 builder.Services.AddScoped<IDepartmentService, DepartmentService>();
-builder.Services.AddScoped<IUserService,UserService>();
+builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<IWorksOnService, WorksOnService>();
-builder.Services.AddScoped<IDependentService,DependentService>();
+builder.Services.AddScoped<IDependentService, DependentService>();
 builder.Services.AddScoped<IWorkflowService, WorkflowService>();
 builder.Services.AddScoped<IWorkflowSequenceService, WorkflowSequenceService>();
 builder.Services.AddScoped<IProcessService, ProcessService>();
@@ -56,7 +77,8 @@ builder.Services.AddAuthentication(options =>
     options.DefaultSignInScheme =
     options.DefaultSignOutScheme = JwtBearerDefaults.AuthenticationScheme;
 
-}).AddJwtBearer(options => {
+}).AddJwtBearer(options =>
+{
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
@@ -71,10 +93,8 @@ builder.Services.AddAuthentication(options =>
         OnChallenge = context =>
         {
             context.HandleResponse();
-
             context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
             context.Response.ContentType = "application/json";
-
             var result = JsonSerializer.Serialize(new { error = "You are not authorized to access this resource." });
             return context.Response.WriteAsync(result);
         },
@@ -82,9 +102,22 @@ builder.Services.AddAuthentication(options =>
         {
             context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
             context.Response.ContentType = "application/json";
-
             var result = JsonSerializer.Serialize(new { error = "You do not have permission to perform this action." });
             return context.Response.WriteAsync(result);
+        },
+        OnTokenValidated = context =>
+        {
+            return Task.CompletedTask;
+        },
+        OnAuthenticationFailed = context =>
+        {
+            context.Response.StatusCode = 401;
+            return Task.CompletedTask;
+        },
+        OnMessageReceived = context =>
+        {
+            context.Token = context.Request.Cookies["AuthToken"];
+            return Task.CompletedTask;
         }
     };
 });
@@ -101,6 +134,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// Apply middleware in correct order
+app.UseCors("AllowAll");
+app.UseCookiePolicy();
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

@@ -23,7 +23,7 @@ namespace HRISAPI.API.Controllers
             var inputProject = await _projectService.AddProject(project);
             return Ok(inputProject);
         }
-        [Authorize]
+        //[Authorize]
         [HttpGet]
         public async Task<IActionResult> GetAllProjects()
         {

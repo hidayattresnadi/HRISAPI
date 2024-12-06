@@ -2,6 +2,7 @@
 using HRISAPI.Application.DTO.User;
 using HRISAPI.Application.Exceptions;
 using HRISAPI.Application.IServices;
+using HRISAPI.Application.Repositories;
 using HRISAPI.Domain.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -23,11 +24,13 @@ namespace HRISAPI.Application.Services
         private readonly UserManager<AppUser> _userManager;
         private readonly IConfiguration _configuration;
         private readonly RoleManager<IdentityRole> _roleManager;
-        public UserService(UserManager<AppUser> userManager, IConfiguration configuration, RoleManager<IdentityRole> roleManager)
+        private readonly IEmployeeRepository _employeeRepository;
+        public UserService(UserManager<AppUser> userManager, IConfiguration configuration, RoleManager<IdentityRole> roleManager, IEmployeeRepository employeeRepository)
         {
             _userManager = userManager;
             _configuration = configuration;
             _roleManager = roleManager;
+            _employeeRepository = employeeRepository;
         }
         public async Task<Response> Register(Register model)
         {
@@ -50,13 +53,15 @@ namespace HRISAPI.Application.Services
             var result = await _userManager.CreateAsync(user, model.Password);
 
             if (!result.Succeeded)
-
+            {
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
                 return new Response
                 {
                     Status = "Error",
-                    Message = "User creation failed! Please check user details and try again."
+                    Message = $"User creation failed! Errors: {errors}"
                 };
-                
+            }
+
             var defaultRole = Roles.Role_Employee;
             if (!await _roleManager.RoleExistsAsync(defaultRole))
             {
@@ -119,15 +124,18 @@ namespace HRISAPI.Application.Services
         public async Task<UserDTO> GetUserByIdAsync(string userId)
         {
             var user = await _userManager.FindByIdAsync(userId);
+            
             if (user == null)
             {
                 throw new NotFoundException("User is not found"); 
             }
+            var userRoles = await _userManager.GetRolesAsync(user);
             var userDto = new UserDTO
             {
                 UserId = user.Id,
                 UserName = user.UserName,
                 Email = user.Email,
+                Roles = userRoles.ToList<string>()
             };
             return userDto;
         }
@@ -163,6 +171,8 @@ namespace HRISAPI.Application.Services
                 user.RefreshToken = refreshToken.Token;
                 user.RefreshTokenExpire = refreshToken.ExpiryDate;
                 await _userManager.UpdateAsync(user);
+                var chosenEmployee = await _employeeRepository.GetEmployeeNameByIdAsync(user.EmployeeId ?? 0);
+
                 return new AuthLoginResponse
                 {
                     Message = "Login Success",
@@ -170,7 +180,10 @@ namespace HRISAPI.Application.Services
                     ExpiredOn = newAccessToken.ValidTo,
                     Token = new JwtSecurityTokenHandler().WriteToken(newAccessToken),
                     RefreshToken = refreshToken.Token,
-                    RefreshTokenExpireOn = refreshToken.ExpiryDate
+                    RefreshTokenExpireOn = refreshToken.ExpiryDate,
+                    User = user,
+                    Roles = userRoles.ToList(),
+                    EmployeeName = chosenEmployee.EmployeeName
                 };
                 //else
                 //{
@@ -183,13 +196,13 @@ namespace HRISAPI.Application.Services
             }
             return new Response { Status = "Error", Message = "Password not valid!" };
         }
-        public async Task<Response> RefreshToken(RefreshTokenRequest request)
+        public async Task<Response> RefreshToken(string request)
         {
-            if (request == null || string.IsNullOrEmpty(request.RefreshToken))
+            if (request == null)
             {
                 return new Response { Status = "Error", Message = "Invalid Request" };
             }
-            var user = await _userManager.Users.FirstOrDefaultAsync(u => u.RefreshToken == request.RefreshToken);
+            var user = await _userManager.Users.FirstOrDefaultAsync(u => u.RefreshToken == request);
             if (user == null)
             {
                 return new Response { Status = "Error", Message = "Invalid Token" };
@@ -218,15 +231,19 @@ namespace HRISAPI.Application.Services
 
             // Generate new access token
             var newAccessToken = GenerateAccessToken(authClaims);
+            var chosenEmployee = await _employeeRepository.GetEmployeeNameByIdAsync(user.EmployeeId ?? 0);
 
             return new AuthLoginResponse
             {
                 Token = new JwtSecurityTokenHandler().WriteToken(newAccessToken),
                 ExpiredOn = newAccessToken.ValidTo,
                 RefreshTokenExpireOn = user.RefreshTokenExpire.Value,
-                RefreshToken = request.RefreshToken,
+                RefreshToken = request,
                 Status = "Success",
-                Message = "Here is the new access token"
+                Message = "Here is the new access token",
+                User = user,
+                Roles = userRoles.ToList(),
+                EmployeeName = chosenEmployee.EmployeeName,
             };
         }
         public async Task<Response> LogoutAsync(string email)
