@@ -41,6 +41,7 @@ namespace HRISAPI.Infrastructure.Repositories
 
             // Include navigational properties
             entities = entities.Include(lr => lr.Process).ThenInclude(p => p.Requester).ThenInclude(r =>r.Employee);
+            entities = entities.Include(lr => lr.Process).ThenInclude(p => p.WorkflowSequence);
 
             // Apply filter expression if provided
             if (expression != null)

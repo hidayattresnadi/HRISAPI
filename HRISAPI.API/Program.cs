@@ -27,7 +27,8 @@ builder.Services.AddCors(options =>
         policy.WithOrigins("http://localhost:5173") // Ganti dengan URL frontend Anda
               .AllowAnyHeader()
               .AllowAnyMethod()
-              .AllowCredentials(); // Mengizinkan credentials
+              .AllowCredentials() // Mengizinkan credentials
+              .WithExposedHeaders("Content-Disposition");
     });
 });
 

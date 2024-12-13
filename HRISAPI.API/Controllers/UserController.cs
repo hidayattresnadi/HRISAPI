@@ -3,7 +3,9 @@ using HRISAPI.Application.DTO.User;
 using HRISAPI.Application.IServices;
 using HRISAPI.Application.QueryParameter;
 using HRISAPI.Application.Services;
+using HRISAPI.Domain.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HRISAPI.API.Controllers
@@ -13,9 +15,11 @@ namespace HRISAPI.API.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserService _authService;
-        public UserController(IUserService authService)
+        private readonly UserManager<AppUser> _userManager;
+        public UserController(IUserService authService, UserManager<AppUser> userManager)
         {
             _authService = authService;
+            _userManager = userManager;
         }
         [Authorize(Roles = Roles.Role_Administrator)]
         [HttpPost("register")]
@@ -142,6 +146,34 @@ namespace HRISAPI.API.Controllers
             });
 
             return Ok(result);
+        }
+
+        [HttpPost("/reset_password")]
+        public async Task<IActionResult> ResetPasswordByAdmin(string userId, string newPassword)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound("User not found.");
+            }
+
+            // Hapus password lama (jika ada)
+            var removePasswordResult = await _userManager.RemovePasswordAsync(user);
+            if (!removePasswordResult.Succeeded)
+            {
+                return BadRequest(removePasswordResult.Errors);
+            }
+
+            // Tambahkan password baru
+            var addPasswordResult = await _userManager.AddPasswordAsync(user, newPassword);
+            if (addPasswordResult.Succeeded)
+            {
+                return Ok("Password has been reset successfully.");
+            }
+            else
+            {
+                return BadRequest(addPasswordResult.Errors);
+            }
         }
     }
 }

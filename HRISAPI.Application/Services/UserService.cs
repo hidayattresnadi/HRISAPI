@@ -183,7 +183,7 @@ namespace HRISAPI.Application.Services
                     RefreshTokenExpireOn = refreshToken.ExpiryDate,
                     User = user,
                     Roles = userRoles.ToList(),
-                    EmployeeName = chosenEmployee.EmployeeName
+                    EmployeeName = chosenEmployee?.EmployeeName ?? "No Employee Name"
                 };
                 //else
                 //{

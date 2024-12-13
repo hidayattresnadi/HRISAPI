@@ -19,6 +19,7 @@ using Microsoft.AspNetCore.Http;
 using HRISAPI.Domain.Models;
 using LinqKit;
 using System.Drawing;
+using Microsoft.AspNetCore.Identity;
 
 namespace HRISAPI.Application.Services
 {
@@ -28,12 +29,16 @@ namespace HRISAPI.Application.Services
         private readonly IProcessRepository _processRepository;
         private readonly IWorkflowActionRepository _workflowActionRepository;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        public LeaveRequestService(ILeaveRequestRepository leaveRequestRepository, IProcessRepository processRepository, IWorkflowActionRepository workflowActionRepository, IHttpContextAccessor httpContextAccessor)
+        private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly UserManager<AppUser> _userManager;
+        public LeaveRequestService(ILeaveRequestRepository leaveRequestRepository, IProcessRepository processRepository, IWorkflowActionRepository workflowActionRepository, IHttpContextAccessor httpContextAccessor, RoleManager<IdentityRole> roleManager, UserManager<AppUser> userManager)
         {
             _leaveRequestRepository = leaveRequestRepository;
             _processRepository = processRepository;
             _workflowActionRepository = workflowActionRepository;
             _httpContextAccessor = httpContextAccessor;
+            _roleManager = roleManager;
+            _userManager = userManager;
         }
 
         public async Task<byte[]> GenerateLeaveRequestsPDF(LeaveRequestDTOFiltered request)
@@ -91,8 +96,9 @@ namespace HRISAPI.Application.Services
                 return null;
             }
 
-            var chosenProcess = await _processRepository.GetFirstOrDefaultAsync(p => p.ProcessId == id, "Requester");
+            var chosenProcess = await _processRepository.GetFirstOrDefaultAsync(p => p.ProcessId == id, "Requester,WorkflowSequence");
             var requestHistory = await _workflowActionRepository.GetAllAsync(wfa => wfa.ProcessId == id, "Actor", rh => rh.ActionId);
+            var role = await _roleManager.FindByIdAsync(chosenProcess.WorkflowSequence.RequiredRole);
 
             var requestHistoryDto = requestHistory.Select(x => new
             {
@@ -114,7 +120,8 @@ namespace HRISAPI.Application.Services
                 TotalDays = ((getLeaveRequest.EndDate).Day - (getLeaveRequest.StartDate).Day),
                 LeaveType = getLeaveRequest.LeaveType,
                 Reason = getLeaveRequest.Reason,
-                RequestHistory = requestHistoryDto
+                RequestHistory = requestHistoryDto,
+                RequiredRole = role ?? null,
             };
             return result;
         }
@@ -131,16 +138,21 @@ namespace HRISAPI.Application.Services
                 .ToList();
 
             var userId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
-
             bool isEmployeeSuperVisor = userRoles.Contains(Roles.Role_Employee_Supervisor);
             bool isEmployee = userRoles.Contains(Roles.Role_Employee);
             bool isHRManager = userRoles.Contains(Roles.Role_HR_Manager);
 
+            var userData = await _userManager.FindByIdAsync(userId);
+
             Expression<Func<LeaveRequest, bool>> expression = lr => true;
 
-            if (isEmployeeSuperVisor || isHRManager)
+            if (isHRManager)
             {
                 expression = expression.And(lr => userRoleIds.Contains(lr.Process.WorkflowSequence.RequiredRole));
+            }
+            else if (isEmployeeSuperVisor)
+            {
+                expression = expression.And(lr => userRoleIds.Contains(lr.Process.WorkflowSequence.RequiredRole) && lr.Process.Requester.Employee.SuperVisorId == userData.EmployeeId  );
             }
             else if (isEmployee)
             {
@@ -172,8 +184,8 @@ namespace HRISAPI.Application.Services
                 ProcessId = leaveRequest.ProcessId,
                 RequestDate = leaveRequest.Process?.RequestDate ?? DateTime.MinValue,  // Jika Process null, beri nilai default DateTime.MinValue
                 Status = leaveRequest.Process?.Status ?? "Pending",  // Jika Process null, beri nilai default "Pending"
-                FileName = leaveRequest.FileName ?? "No file name provided"     // Untuk File, bisa juga ditangani dengan null conditional jika perlu
-            });
+                FileName = string.IsNullOrWhiteSpace(leaveRequest.FileName) ? "No file name provided" : leaveRequest.FileName,
+        });
 
 
 

@@ -131,12 +131,12 @@ namespace HRISAPI.API.Controllers
 
                 if (formFile.Length > maxFileSize)
                 {
-                    return BadRequest("File exceeds 2 MB limit");
+                    return BadRequest("File exceeds 5 MB limit");
                 }
 
                 if (!AllowedFileTypes.Contains(formFile.ContentType))
                 {
-                    return BadRequest("Only pdf and word documents are allowed");
+                    return BadRequest("Only pdf, jpg, and jpeg documents are allowed");
                 }
                 string uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads");
                 if (!Directory.Exists(uploadsFolder))

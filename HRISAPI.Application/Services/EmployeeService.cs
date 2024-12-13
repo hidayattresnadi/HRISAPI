@@ -389,7 +389,7 @@ namespace HRISAPI.Application.Services
                     throw new BadRequestException("The StartDate must be a date in the future or current date.");
                 }
 
-                if (request.EndDate < request.StartDate)
+                if (request.EndDate <= request.StartDate)
                 {
                    throw new BadRequestException("The EndDate must be equal or more than start date.");
                 }
@@ -426,7 +426,7 @@ namespace HRISAPI.Application.Services
                 RequesterId = userId,
                 WorkflowId = workflowId,
                 RequestType = "Adding Leave",
-                Status = "Pending",
+                Status = "Pending Employee Supervisor Review",
                 RequestDate = DateTime.UtcNow,
                 RequestId = newRequest.RequestId,
                 CurrentStepId = nextStepId.NextStepId

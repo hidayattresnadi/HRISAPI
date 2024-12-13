@@ -35,15 +35,31 @@ namespace HRISAPI.Application.Services
                 .Where(c => c.Type == ClaimTypes.Role)
                 .Select(c => c.Value)
                 .ToList();
+            var employeeId = _httpContextAccessor.HttpContext?.User?.FindFirstValue("EmployeeId");
+            int? intEmployeeId = string.IsNullOrEmpty(employeeId) ? (int?)null : int.Parse(employeeId);
 
             IEnumerable<Process> process = Enumerable.Empty<Process>();
             process = await _processRepository.GetProcessBasedOnRole(userRoles);
+
+            bool isEmployeeSupervisor = userRoles.Contains(Roles.Role_Employee_Supervisor);
+
+            if (isEmployeeSupervisor) 
+            {
+                process = process.Where(p => p.Requester.Employee.SuperVisorId == intEmployeeId);
+            }
 
             var processUsersDTO = process.Select(p => new ProcessDetailDTO
             {
                 ProcessId = p.ProcessId,
                 WorkflowName = p.Workflow.WorkflowName,
-                Requester = p.Requester.UserName,
+                EmployeeName = p.Requester.Employee.EmployeeName,
+                StartDate = p.LeaveRequests.ElementAtOrDefault(0)?.StartDate ?? null,
+                EndDate = p.LeaveRequests.ElementAtOrDefault(0)?.EndDate ?? null,
+                LeaveType = p.LeaveRequests.ElementAtOrDefault(0)?.LeaveType ?? null,
+                Reason = p.LeaveRequests.ElementAtOrDefault(0)?.Reason ?? null,
+                TotalDays = p.LeaveRequests?.ElementAtOrDefault(0)?.StartDate != null && p.LeaveRequests?.ElementAtOrDefault(0)?.EndDate != null
+                            ? (p.LeaveRequests.ElementAtOrDefault(0)?.EndDate.Day - p.LeaveRequests.ElementAtOrDefault(0)?.StartDate.Day) + 1
+                            : (int?)null,
                 RequestDate = p.RequestDate,
                 Status = p.Status,
                 CurrentStep = p.WorkflowSequence.StepName

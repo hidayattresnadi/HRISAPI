@@ -16,7 +16,9 @@ namespace HRISAPI.Infrastructure.Repositories
         public async Task<IEnumerable<Process>> GetProcessBasedOnRole(List<string> roles)
         {
             var process = await _db.Processes.Include(p =>p.WorkflowSequence).ThenInclude(w =>w.Role).
-                Include(p=>p.Workflow).Include(p=>p.Requester).Where(p=> roles.Contains(p.WorkflowSequence.Role.Name))
+                Include(p=>p.Workflow).Include(p=>p.Requester).ThenInclude(r => r.Employee).
+                Include(p => p.LeaveRequests).
+                Where(p=> roles.Contains(p.WorkflowSequence.Role.Name))
                 .ToListAsync();
             return process;
         }
